@@ -293,6 +293,7 @@ async function clearLeadsCache() {
 window.onload = async () => {
   initTheme()
   initAdminFilterConfig()
+  initKpiCardTooltips()
   initTableFloatingTooltip()
 
   if (window.Chart && window.ChartDataLabels) {
@@ -2113,6 +2114,88 @@ function buildAdmissionTooltip(byAdmission, accentColor) {
   return html
 }
 
+// ================= KPI CARD TOOLTIPS ENGINE =================
+// Permite que el tooltip permanezca 3s al hacer clic, no se oculte al señalar o seleccionar texto
+function initKpiCardTooltips() {
+  const cards = document.querySelectorAll('.kpi-card')
+  let activeCard = null
+  let pinTimer = null
+
+  function isTextSelected(container) {
+    const sel = window.getSelection()
+    if (!sel || !sel.toString().trim()) return false
+    if (!container) return false
+    return container.contains(sel.anchorNode) || container.contains(sel.focusNode)
+  }
+
+  cards.forEach((card) => {
+    const tooltip = card.querySelector('.kpi-tooltip')
+    if (!tooltip) return
+
+    let hoverCard = false
+    let hoverTooltip = false
+
+    function pinForDuration(ms = 3000) {
+      cards.forEach((c) => {
+        if (c !== card) c.classList.remove('pinned-tooltip')
+      })
+      if (pinTimer) clearTimeout(pinTimer)
+
+      activeCard = card
+      card.classList.add('pinned-tooltip')
+
+      pinTimer = setTimeout(() => {
+        if (!hoverCard && !hoverTooltip && !isTextSelected(tooltip)) {
+          card.classList.remove('pinned-tooltip')
+          if (activeCard === card) activeCard = null
+        }
+      }, ms)
+    }
+
+    card.addEventListener('click', (e) => {
+      if (tooltip.contains(e.target) && isTextSelected(tooltip)) {
+        return
+      }
+      pinForDuration(3000)
+    })
+
+    card.addEventListener('mouseenter', () => {
+      hoverCard = true
+    })
+
+    card.addEventListener('mouseleave', () => {
+      hoverCard = false
+      if (activeCard === card && !card.classList.contains('pinned-tooltip')) {
+        // Normal hover out
+      }
+    })
+
+    tooltip.addEventListener('mouseenter', () => {
+      hoverTooltip = true
+    })
+
+    tooltip.addEventListener('mouseleave', () => {
+      hoverTooltip = false
+      if (activeCard === card && pinTimer) {
+        // Si estaba pinned, expirará cuando el timer o mouseleave concluya
+      }
+    })
+  })
+
+  // Clic fuera de las tarjetas KPI para cerrar tooltips fijados
+  document.addEventListener('click', (e) => {
+    const clickedCard = e.target.closest('.kpi-card')
+    if (!clickedCard && activeCard) {
+      const activeTooltip = activeCard.querySelector('.kpi-tooltip')
+      if (!isTextSelected(activeTooltip)) {
+        activeCard.classList.remove('pinned-tooltip')
+        if (pinTimer) clearTimeout(pinTimer)
+        activeCard = null
+      }
+    }
+  })
+}
+
 // ================= FLOATING TABLE TOOLTIP ENGINE =================
 // Portal flotante fuera de la tabla para que se sobreponga a todo sin recortes ni provocar scrollbars internos
 function initTableFloatingTooltip() {
@@ -2126,8 +2209,18 @@ function initTableFloatingTooltip() {
 
   let activeCell = null
   let hideTimer = null
+  let pinTimer = null
+  let isPinned = false
+  let isHoveringCell = false
+  let isHoveringTooltip = false
 
-  function showTooltip(cell) {
+  function isTextSelected() {
+    const sel = window.getSelection()
+    if (!sel || !sel.toString().trim()) return false
+    return tooltip.contains(sel.anchorNode) || tooltip.contains(sel.focusNode)
+  }
+
+  function showTooltip(cell, pin = false) {
     if (hideTimer) {
       clearTimeout(hideTimer)
       hideTimer = null
@@ -2198,19 +2291,35 @@ function initTableFloatingTooltip() {
     tooltip.setAttribute('data-arrow', arrowDir)
     tooltip.style.visibility = 'visible'
     tooltip.classList.add('show')
+
+    if (pin) {
+      if (pinTimer) clearTimeout(pinTimer)
+      isPinned = true
+      pinTimer = setTimeout(() => {
+        isPinned = false
+        if (!isHoveringCell && !isHoveringTooltip && !isTextSelected()) {
+          scheduleHide(0)
+        }
+      }, 3000)
+    }
   }
 
-  function scheduleHide() {
+  function scheduleHide(delay = 150) {
+    if (isPinned || isHoveringCell || isHoveringTooltip || isTextSelected()) {
+      return
+    }
     if (hideTimer) clearTimeout(hideTimer)
     hideTimer = setTimeout(() => {
-      tooltip.classList.remove('show')
-      setTimeout(() => {
-        if (!tooltip.classList.contains('show')) {
-          tooltip.style.display = 'none'
-          activeCell = null
-        }
-      }, 150)
-    }, 120)
+      if (!isPinned && !isHoveringCell && !isHoveringTooltip && !isTextSelected()) {
+        tooltip.classList.remove('show')
+        setTimeout(() => {
+          if (!tooltip.classList.contains('show')) {
+            tooltip.style.display = 'none'
+            activeCell = null
+          }
+        }, 150)
+      }
+    }, delay)
   }
 
   // Delegación de eventos en la tabla de rendimiento
@@ -2219,7 +2328,8 @@ function initTableFloatingTooltip() {
     table.addEventListener('mouseover', (e) => {
       const cell = e.target.closest('.hover-cell')
       if (cell) {
-        showTooltip(cell)
+        isHoveringCell = true
+        showTooltip(cell, false)
       }
     })
 
@@ -2230,25 +2340,23 @@ function initTableFloatingTooltip() {
         if (related && (cell.contains(related) || tooltip.contains(related))) {
           return
         }
-        scheduleHide()
+        isHoveringCell = false
+        scheduleHide(150)
       }
     })
 
-    // Soporte táctil / clic para dispositivos móviles y tablets
+    // Al hacer clic en el número respectivo, fijar durante 3 segundos
     table.addEventListener('click', (e) => {
       const cell = e.target.closest('.hover-cell')
       if (cell) {
-        if (activeCell === cell && tooltip.classList.contains('show')) {
-          scheduleHide()
-        } else {
-          showTooltip(cell)
-        }
+        showTooltip(cell, true)
       }
     })
   }
 
-  // Permitir interacción con el tooltip flotante (para admisiones anidadas)
+  // Permitir interacción con el tooltip flotante (para admisiones anidadas y selección de texto)
   tooltip.addEventListener('mouseenter', () => {
+    isHoveringTooltip = true
     if (hideTimer) {
       clearTimeout(hideTimer)
       hideTimer = null
@@ -2260,25 +2368,32 @@ function initTableFloatingTooltip() {
     if (activeCell && related && activeCell.contains(related)) {
       return
     }
-    scheduleHide()
+    isHoveringTooltip = false
+    scheduleHide(150)
   })
 
-  // Clic fuera para cerrar en móviles
+  // Clic fuera para cerrar
   document.addEventListener('click', (e) => {
     if (tooltip.classList.contains('show')) {
       if (!tooltip.contains(e.target) && !e.target.closest('.hover-cell')) {
-        tooltip.classList.remove('show')
-        tooltip.style.display = 'none'
-        activeCell = null
+        if (!isTextSelected()) {
+          if (pinTimer) clearTimeout(pinTimer)
+          isPinned = false
+          tooltip.classList.remove('show')
+          tooltip.style.display = 'none'
+          activeCell = null
+        }
       }
     }
   })
 
-  // Ocultar al hacer scroll para que no se desplace de la celda
+  // Ocultar al hacer scroll (a menos que se esté seleccionando texto)
   window.addEventListener(
     'scroll',
     () => {
-      if (tooltip.style.display === 'block') {
+      if (tooltip.style.display === 'block' && !isTextSelected()) {
+        if (pinTimer) clearTimeout(pinTimer)
+        isPinned = false
         tooltip.classList.remove('show')
         tooltip.style.display = 'none'
         activeCell = null
@@ -2292,7 +2407,9 @@ function initTableFloatingTooltip() {
     tableContainer.addEventListener(
       'scroll',
       () => {
-        if (tooltip.style.display === 'block') {
+        if (tooltip.style.display === 'block' && !isTextSelected()) {
+          if (pinTimer) clearTimeout(pinTimer)
+          isPinned = false
           tooltip.classList.remove('show')
           tooltip.style.display = 'none'
           activeCell = null
