@@ -442,17 +442,34 @@ function subscribeRealtime() {
   if (!supabaseClient) return
 
   try {
+    // 1. Suscripción a cambios en datos de Leads
     supabaseClient
       .channel('iempresa-realtime-channel')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: SUPABASE_TABLE },
         (payload) => {
-          console.log('Cambio detectado en Supabase:', payload.eventType)
+          console.log('Cambio detectado en Supabase (leads):', payload.eventType)
           clearTimeout(debounceTimer)
           debounceTimer = setTimeout(() => {
             fetchSupabaseData(true)
           }, 1800)
+        },
+      )
+      .subscribe()
+
+    // 2. Suscripción a cambios en tiempo real de Configuración de Filtros y Contraseña de Administrador
+    supabaseClient
+      .channel('iempresa-config-realtime-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'iempresa_config_filtros' },
+        (payload) => {
+          console.log(
+            'Cambio detectado en Supabase (configuración de filtros / contraseña):',
+            payload.eventType,
+          )
+          syncAdminFilterConfigWithSupabase()
         },
       )
       .subscribe()
@@ -3317,6 +3334,12 @@ function openAdminAuthModal() {
     input.value = ''
   }
   if (modal) modal.classList.add('active')
+
+  // Sincronizar silenciosamente en segundo plano la configuración y contraseña más reciente
+  if (supabaseClient) {
+    syncAdminFilterConfigWithSupabase()
+  }
+
   setTimeout(() => {
     if (input) input.focus()
   }, 100)
@@ -3333,6 +3356,20 @@ async function submitAdminAuth() {
   const input = document.getElementById('admin-password-input')
   const error = document.getElementById('admin-auth-error')
   const entered = (input ? input.value : '').trim()
+
+  if (!entered) {
+    if (error) {
+      error.style.display = 'block'
+      error.innerText = 'Por favor ingrese la contraseña de administrador.'
+    }
+    if (input) input.focus()
+    return
+  }
+
+  // Sincronizar en vivo con Supabase por si otro administrador actualizó la contraseña hace un momento
+  if (supabaseClient) {
+    await syncAdminFilterConfigWithSupabase()
+  }
 
   const currentPass =
     currentAdminConfig.admin_password || DEFAULT_ADMIN_PASSWORD_HASH
