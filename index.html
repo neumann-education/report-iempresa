@@ -1577,7 +1577,9 @@
             >
               <span
                 >Mostrando
-                <span id="explorer-count" style="color: var(--brand-primary); font-weight: 600;"
+                <span
+                  id="explorer-count"
+                  style="color: var(--brand-primary); font-weight: 600"
                   >0</span
                 >
                 registros filtrados</span
@@ -1595,7 +1597,11 @@
                   gap: 6px;
                 "
               >
-                Asesor: <strong id="explorer-advisor-name" style="font-weight: 600;"></strong>
+                Asesor:
+                <strong
+                  id="explorer-advisor-name"
+                  style="font-weight: 600"
+                ></strong>
                 <button
                   onclick="clearAdvisorFilter()"
                   style="
@@ -1627,10 +1633,19 @@
               >
                 <span class="search-icon">🔍</span>
                 <input
-                  type="text"
+                  type="search"
                   id="search-input"
                   class="search-input"
+                  name="dashboard_lead_search"
                   placeholder="Buscar por ID, nombre, teléfono..."
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-form-type="other"
+                  data-bwignore="true"
                   oninput="handleSearch(this.value)"
                 />
               </div>
@@ -1701,11 +1716,29 @@
         </div>
         <form
           class="admin-modal-body"
+          autocomplete="off"
           onsubmit="
             event.preventDefault()
             submitAdminAuth()
           "
         >
+          <!-- Decoy fields to capture browser autofill and prevent filling page inputs -->
+          <input
+            type="text"
+            name="username"
+            value="admin"
+            autocomplete="username"
+            style="
+              position: absolute;
+              left: -9999px;
+              width: 1px;
+              height: 1px;
+              opacity: 0;
+              pointer-events: none;
+            "
+            tabindex="-1"
+            aria-hidden="true"
+          />
           <div class="admin-auth-intro">
             <p>
               Ingresa la contraseña de administrador para configurar qué filtros
@@ -1722,7 +1755,7 @@
                 id="admin-password-input"
                 class="admin-input"
                 placeholder="Ingresa la contraseña..."
-                autocomplete="current-password"
+                autocomplete="new-password"
                 required
               />
               <button
@@ -2084,6 +2117,7 @@
                     id="admin-new-pass"
                     class="admin-input"
                     placeholder="Mínimo 4 caracteres (opcional)"
+                    autocomplete="new-password"
                   />
                 </div>
                 <div class="admin-form-group">
@@ -2093,12 +2127,12 @@
                     id="admin-confirm-pass"
                     class="admin-input"
                     placeholder="Repite la nueva contraseña"
+                    autocomplete="new-password"
                   />
                 </div>
               </div>
             </details>
           </div>
-
         </div>
 
         <div class="admin-modal-footer">
@@ -2116,6 +2150,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Portal de Tooltip Flotante Global para la Tabla (superpuesto a todo, sin recortes ni scrollbars) -->
+    <div id="table-floating-tooltip" class="table-floating-tooltip"></div>
 
     <script src="script.js"></script>
   </body>

@@ -293,10 +293,18 @@ async function clearLeadsCache() {
 window.onload = async () => {
   initTheme()
   initAdminFilterConfig()
+  initTableFloatingTooltip()
 
   if (window.Chart && window.ChartDataLabels) {
     Chart.register(ChartDataLabels)
   }
+
+  // Prevenir que gestores de contraseñas de navegadores inyecten "adminsoporte" en el campo de búsqueda
+  const sInput = document.getElementById('search-input')
+  if (sInput && sInput.value.toLowerCase() === 'adminsoporte') {
+    sInput.value = ''
+  }
+  fSearch = ''
 
   // Limpiar localStorage obsoleto que causaba QuotaExceededError (límite de 5MB)
   try {
@@ -314,6 +322,18 @@ window.onload = async () => {
   // Poblar filtros con la caché inicial
   populateFilterOptions()
   updateAll()
+
+  // Verificación retardada por si el autofill del navegador se ejecuta de forma asíncrona
+  setTimeout(() => {
+    const searchEl = document.getElementById('search-input')
+    if (searchEl && searchEl.value.toLowerCase() === 'adminsoporte') {
+      searchEl.value = ''
+      if (fSearch === 'adminsoporte') {
+        fSearch = ''
+        updateAll()
+      }
+    }
+  }, 350)
 
   // Conectar a Supabase y descargar datos frescos en segundo plano
   await initSupabaseConnection()
@@ -914,13 +934,19 @@ window.addEventListener('click', (e) => {
 
 // ================= FILTER CONTROLLERS =================
 function handleFilterChange(type, checkbox) {
+  const checkboxes = document.querySelectorAll(`input[data-type="${type}"]`)
   const setMap = getSetByType(type)
-  const val = checkbox.value
+  const totalCount = checkboxes.length
 
-  if (checkbox.checked) {
-    setMap.add(val)
+  const checkedBoxes = Array.from(checkboxes).filter((cb) => cb.checked)
+  setMap.clear()
+
+  if (checkedBoxes.length === 0) {
+    setMap.add('__NONE__')
+  } else if (checkedBoxes.length === totalCount) {
+    // Todos marcados: setMap queda vacío (sin filtro, todos permitidos)
   } else {
-    setMap.delete(val)
+    checkedBoxes.forEach((cb) => setMap.add(cb.value))
   }
 
   updateFilterButtonLabel(type)
@@ -931,16 +957,13 @@ function toggleAllFilters(type, selectAll) {
   const checkboxes = document.querySelectorAll(`input[data-type="${type}"]`)
   const setMap = getSetByType(type)
 
-  if (selectAll) {
-    checkboxes.forEach((cb) => {
-      cb.checked = true
-      setMap.add(cb.value)
-    })
-  } else {
-    checkboxes.forEach((cb) => {
-      cb.checked = false
-    })
-    setMap.clear()
+  checkboxes.forEach((cb) => {
+    cb.checked = selectAll
+  })
+
+  setMap.clear()
+  if (!selectAll) {
+    setMap.add('__NONE__')
   }
 
   updateFilterButtonLabel(type)
@@ -1036,15 +1059,27 @@ function updateFilterButtonLabel(type) {
   if (setMap.size === 0) {
     lblEl.innerText = `Todos los ${titles[type] ? titles[type].toLowerCase() : type}`
     if (countEl) countEl.innerText = 'Todo'
+  } else if (setMap.has('__NONE__')) {
+    lblEl.innerText = '0 seleccionados'
+    if (countEl) countEl.innerText = '0'
   } else {
-    lblEl.innerText = `${setMap.size} seleccionados`
+    lblEl.innerText = `${setMap.size} seleccionado${setMap.size === 1 ? '' : 's'}`
     if (countEl) countEl.innerText = setMap.size
   }
 }
 
 // Global Text Search
 function handleSearch(query) {
-  fSearch = (query || '').trim().toLowerCase()
+  const clean = (query || '').trim()
+  // Protección contra autofill de navegadores/gestores de contraseñas (ej: usuario guardado "adminsoporte")
+  if (clean.toLowerCase() === 'adminsoporte') {
+    const input = document.getElementById('search-input')
+    if (input) input.value = ''
+    fSearch = ''
+    updateAll()
+    return
+  }
+  fSearch = clean.toLowerCase()
   updateAll()
 }
 
@@ -1224,6 +1259,38 @@ function setQuickGroupFilter(grp) {
   updateAll()
 }
 
+// Helper para determinar si existe algún filtro activo en el sistema
+function hasActiveFilters() {
+  if (fSearch && fSearch.trim().length > 0) return true
+  if (fCreaStart || fCreaEnd) return true
+  if (fCambioStart || fCambioEnd) return true
+  if (fAdvs && fAdvs.size > 0) return true
+  if (fPipelines && fPipelines.size > 0) return true
+  if (fStages && fStages.size > 0) return true
+  if (fPrograms && fPrograms.size > 0) return true
+  if (fOrigins && fOrigins.size > 0) return true
+  if (fCiudades && fCiudades.size > 0) return true
+  if (fNiveles && fNiveles.size > 0) return true
+  if (fMedios && fMedios.size > 0) return true
+  if (fIAs && fIAs.size > 0) return true
+  if (fUtmSource && fUtmSource.size > 0) return true
+  if (fUtmMedium && fUtmMedium.size > 0) return true
+  if (fUtmCampaign && fUtmCampaign.size > 0) return true
+  if (fUtmContent && fUtmContent.size > 0) return true
+  if (fUtmTerm && fUtmTerm.size > 0) return true
+  if (fOrigenChatfuel && fOrigenChatfuel.size > 0) return true
+  if (fUtmCampaignCh && fUtmCampaignCh.size > 0) return true
+  if (fUtmContentCh && fUtmContentCh.size > 0) return true
+  if (fUtmTermCh && fUtmTermCh.size > 0) return true
+  if (fRmktOrigen && fRmktOrigen.size > 0) return true
+  if (fRmktRespuesta && fRmktRespuesta.size > 0) return true
+  if (fRmktNombre && fRmktNombre.size > 0) return true
+  if (fRmktDetalles && fRmktDetalles.size > 0) return true
+  if (fRmktInteres && fRmktInteres.size > 0) return true
+  if (quickGroup && quickGroup !== 'all') return true
+  return false
+}
+
 // Active Filter Chips & Clear All
 function renderActiveChips() {
   const container = document.getElementById('active-chips')
@@ -1281,9 +1348,10 @@ function renderActiveChips() {
 
   setDefs.forEach((item) => {
     if (item.set.size > 0) {
+      const isNone = item.set.has('__NONE__')
       chips.push({
-        label: `${item.label}: ${item.set.size}`,
-        remove: () => toggleAllFilters(item.type, false),
+        label: `${item.label}: ${isNone ? '0' : item.set.size}`,
+        remove: () => toggleAllFilters(item.type, true),
       })
     }
   })
@@ -1570,13 +1638,16 @@ function updateAll() {
   ASESORES_OFICIALES.forEach((adv) => {
     advisorStats[adv] = {
       name: adv,
+      nuevos: 0,
       gestion: 0,
       perdida: 0,
       exito: 0,
       total: 0,
+      breakdownNuevos: {},
       breakdownGestion: {},
       breakdownPerdida: {},
       breakdownExito: {},
+      breakdownAllStages: {},
       byAdmissionGestion: {},
       byAdmissionPerdida: {},
       byAdmissionExito: {},
@@ -1596,7 +1667,11 @@ function updateAll() {
     }
 
     // KPI 2: Gestión Comercial (Progreso: Open to Documentos)
-    if (stageGrp === 'Progreso') {
+    if (
+      stageGrp === 'Progreso' &&
+      stageName !== 'Lead' &&
+      stageName !== 'RMKT'
+    ) {
       kpis.gestionComercial++
       gestionBreakdown[stageName] = (gestionBreakdown[stageName] || 0) + 1
     }
@@ -1618,10 +1693,17 @@ function updateAll() {
     if (advisorStats[adv]) {
       const s = advisorStats[adv]
       s.total++
+      if (!s.breakdownAllStages) s.breakdownAllStages = {}
+      s.breakdownAllStages[stageName] =
+        (s.breakdownAllStages[stageName] || 0) + 1
 
       const adm = row.pipeline || 'Sin Admisión'
 
-      if (stageGrp === 'Progreso') {
+      if (stageName === 'Lead' || stageName === 'RMKT') {
+        s.nuevos = (s.nuevos || 0) + 1
+        if (!s.breakdownNuevos) s.breakdownNuevos = {}
+        s.breakdownNuevos[stageName] = (s.breakdownNuevos[stageName] || 0) + 1
+      } else if (stageGrp === 'Progreso') {
         s.gestion++
         s.breakdownGestion[stageName] = (s.breakdownGestion[stageName] || 0) + 1
 
@@ -1785,11 +1867,33 @@ function renderPerformanceTable(stats, isAdmDetailMode) {
       ? ASESORES_OFICIALES.filter((name) => fAdvs.has(name))
       : ASESORES_OFICIALES
 
-  const advisersList = activeAdvisers.map((name) => stats[name]).filter(Boolean)
+  let advisersList = activeAdvisers.map((name) => stats[name]).filter(Boolean)
+
+  const isFiltered = hasActiveFilters()
+  // Si hay algún filtro activo, ocultar asesores que tengan 0 en "TOTAL LEADS"
+  if (isFiltered) {
+    advisersList = advisersList.filter((item) => item.total > 0)
+  }
 
   const badgeEl = document.getElementById('badge-asesor-count')
   if (badgeEl) {
-    badgeEl.innerText = `${advisersList.length} Asesor${advisersList.length === 1 ? '' : 'es'} Oficial${advisersList.length === 1 ? '' : 'es'}`
+    if (isFiltered && advisersList.length < ASESORES_OFICIALES.length) {
+      badgeEl.innerText = `${advisersList.length} de ${ASESORES_OFICIALES.length} Asesores con Leads`
+    } else {
+      badgeEl.innerText = `${advisersList.length} Asesor${advisersList.length === 1 ? '' : 'es'} Oficial${advisersList.length === 1 ? '' : 'es'}`
+    }
+  }
+
+  if (advisersList.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 28px 16px; color: var(--text-muted); font-size: 0.9rem;">
+          No hay asesores con leads para los filtros aplicados.
+        </td>
+      </tr>
+    `
+    if (tfoot) tfoot.innerHTML = ''
+    return
   }
 
   // Find max conversion rate for relative bar scaling
@@ -1893,7 +1997,17 @@ function renderPerformanceTable(stats, isAdmDetailMode) {
         </td>
 
         <td style="text-align:center;">
-          <span style="font-weight:800; font-size:1.05rem;">${item.total}</span>
+          <div class="hover-cell">
+            <span class="hover-value" style="font-weight:800; font-size:1.05rem; color:var(--text-main);">${item.total}</span>
+            <div class="table-tooltip">
+              <div class="tt-title">Resumen de Negociaciones</div>
+              ${item.nuevos > 0 ? `<div class="tt-row"><span style="color:var(--status-nuevo)">● Prospectos Nuevos:</span> <strong>${item.nuevos.toLocaleString()}</strong></div>` : ''}
+              <div class="tt-row"><span style="color:var(--status-gestion)">● En Gestión:</span> <strong>${item.gestion.toLocaleString()}</strong></div>
+              <div class="tt-row"><span style="color:var(--status-perdida)">● Perdidos:</span> <strong>${item.perdida.toLocaleString()}</strong></div>
+              <div class="tt-row"><span style="color:var(--status-exito)">● Cierres:</span> <strong>${item.exito.toLocaleString()}</strong></div>
+              <div class="tt-row" style="margin-top:6px; padding-top:4px; border-top:1px solid #edf2f7;"><span style="color:var(--brand-primary); font-weight:700;">Total:</span> <strong>${item.total.toLocaleString()}</strong></div>
+            </div>
+          </div>
         </td>
 
         <td style="text-align:center;">
@@ -1999,6 +2113,196 @@ function buildAdmissionTooltip(byAdmission, accentColor) {
   return html
 }
 
+// ================= FLOATING TABLE TOOLTIP ENGINE =================
+// Portal flotante fuera de la tabla para que se sobreponga a todo sin recortes ni provocar scrollbars internos
+function initTableFloatingTooltip() {
+  let tooltip = document.getElementById('table-floating-tooltip')
+  if (!tooltip) {
+    tooltip = document.createElement('div')
+    tooltip.id = 'table-floating-tooltip'
+    tooltip.className = 'table-floating-tooltip'
+    document.body.appendChild(tooltip)
+  }
+
+  let activeCell = null
+  let hideTimer = null
+
+  function showTooltip(cell) {
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+      hideTimer = null
+    }
+
+    const template = cell.querySelector('.table-tooltip')
+    if (!template) return
+
+    activeCell = cell
+    tooltip.innerHTML = template.innerHTML
+    tooltip.style.display = 'block'
+    tooltip.style.visibility = 'hidden' // oculto mientras se calcula la posición
+
+    // Dimensiones del tooltip
+    const ttWidth = tooltip.offsetWidth || 240
+    const ttHeight = tooltip.offsetHeight || 160
+    const rect = cell.getBoundingClientRect()
+
+    // Determinación de posición vertical:
+    // Preferir arriba salvo que no haya suficiente espacio en pantalla
+    let top
+    let arrowDir = 'down'
+    const spaceAbove = rect.top
+    const spaceBelow = window.innerHeight - rect.bottom
+
+    if (spaceAbove >= ttHeight + 15) {
+      top = rect.top - ttHeight - 10
+      arrowDir = 'down'
+    } else if (spaceBelow >= ttHeight + 15) {
+      top = rect.bottom + 10
+      arrowDir = 'up'
+    } else {
+      if (spaceAbove >= spaceBelow) {
+        top = Math.max(10, rect.top - ttHeight - 10)
+        arrowDir = 'down'
+      } else {
+        top = Math.min(window.innerHeight - ttHeight - 10, rect.bottom + 10)
+        arrowDir = 'up'
+      }
+    }
+
+    // Centrado horizontal en relación al número / celda
+    const cellCenterX = rect.left + rect.width / 2
+    let left = cellCenterX - ttWidth / 2
+
+    // Evitar desbordes de los márgenes laterales de la pantalla
+    const pad = 12
+    const minLeft = pad
+    const maxLeft = window.innerWidth - ttWidth - pad
+    const clampedLeft = Math.max(minLeft, Math.min(left, maxLeft))
+
+    // Posicionamiento de la flecha triangular indicadora
+    const arrowOffset = Math.max(
+      15,
+      Math.min(ttWidth - 15, cellCenterX - clampedLeft),
+    )
+    tooltip.style.setProperty('--arrow-left', `${arrowOffset}px`)
+
+    // Si queda muy pegado al borde derecho, invertir submenú anidado
+    if (clampedLeft + ttWidth + 200 > window.innerWidth) {
+      tooltip.classList.add('flip-nested')
+    } else {
+      tooltip.classList.remove('flip-nested')
+    }
+
+    tooltip.style.top = `${top}px`
+    tooltip.style.left = `${clampedLeft}px`
+    tooltip.setAttribute('data-arrow', arrowDir)
+    tooltip.style.visibility = 'visible'
+    tooltip.classList.add('show')
+  }
+
+  function scheduleHide() {
+    if (hideTimer) clearTimeout(hideTimer)
+    hideTimer = setTimeout(() => {
+      tooltip.classList.remove('show')
+      setTimeout(() => {
+        if (!tooltip.classList.contains('show')) {
+          tooltip.style.display = 'none'
+          activeCell = null
+        }
+      }, 150)
+    }, 120)
+  }
+
+  // Delegación de eventos en la tabla de rendimiento
+  const table = document.getElementById('performance-table')
+  if (table) {
+    table.addEventListener('mouseover', (e) => {
+      const cell = e.target.closest('.hover-cell')
+      if (cell) {
+        showTooltip(cell)
+      }
+    })
+
+    table.addEventListener('mouseout', (e) => {
+      const cell = e.target.closest('.hover-cell')
+      if (cell) {
+        const related = e.relatedTarget
+        if (related && (cell.contains(related) || tooltip.contains(related))) {
+          return
+        }
+        scheduleHide()
+      }
+    })
+
+    // Soporte táctil / clic para dispositivos móviles y tablets
+    table.addEventListener('click', (e) => {
+      const cell = e.target.closest('.hover-cell')
+      if (cell) {
+        if (activeCell === cell && tooltip.classList.contains('show')) {
+          scheduleHide()
+        } else {
+          showTooltip(cell)
+        }
+      }
+    })
+  }
+
+  // Permitir interacción con el tooltip flotante (para admisiones anidadas)
+  tooltip.addEventListener('mouseenter', () => {
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+      hideTimer = null
+    }
+  })
+
+  tooltip.addEventListener('mouseleave', (e) => {
+    const related = e.relatedTarget
+    if (activeCell && related && activeCell.contains(related)) {
+      return
+    }
+    scheduleHide()
+  })
+
+  // Clic fuera para cerrar en móviles
+  document.addEventListener('click', (e) => {
+    if (tooltip.classList.contains('show')) {
+      if (!tooltip.contains(e.target) && !e.target.closest('.hover-cell')) {
+        tooltip.classList.remove('show')
+        tooltip.style.display = 'none'
+        activeCell = null
+      }
+    }
+  })
+
+  // Ocultar al hacer scroll para que no se desplace de la celda
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (tooltip.style.display === 'block') {
+        tooltip.classList.remove('show')
+        tooltip.style.display = 'none'
+        activeCell = null
+      }
+    },
+    { passive: true },
+  )
+
+  const tableContainer = document.querySelector('.table-responsive')
+  if (tableContainer) {
+    tableContainer.addEventListener(
+      'scroll',
+      () => {
+        if (tooltip.style.display === 'block') {
+          tooltip.classList.remove('show')
+          tooltip.style.display = 'none'
+          activeCell = null
+        }
+      },
+      { passive: true },
+    )
+  }
+}
+
 // Jump from advisor row to explorer tab without modifying global filters or advisor table
 function filterByAdvisor(advName) {
   explorerAdvisorFilter = advName
@@ -2017,10 +2321,16 @@ function clearAdvisorFilter() {
 function renderCharts(advisorStats) {
   if (!window.Chart) return
 
-  const advisers =
+  let advisers =
     typeof fAdvs !== 'undefined' && fAdvs && fAdvs.size > 0
       ? ASESORES_OFICIALES.filter((adv) => fAdvs.has(adv))
       : ASESORES_OFICIALES
+
+  if (hasActiveFilters()) {
+    advisers = advisers.filter(
+      (adv) => advisorStats[adv] && advisorStats[adv].total > 0,
+    )
+  }
 
   const shortNames = advisers.map((a) => {
     const parts = a.split(' ')
@@ -2058,7 +2368,11 @@ function renderCharts(advisorStats) {
       label: st,
       data: advisers.map(
         (adv) =>
-          (advisorStats[adv] && advisorStats[adv].breakdownGestion[st]) || 0,
+          (advisorStats[adv] &&
+            (advisorStats[adv].breakdownAllStages?.[st] ||
+              advisorStats[adv].breakdownGestion?.[st] ||
+              advisorStats[adv].breakdownNuevos?.[st])) ||
+          0,
       ),
       backgroundColor: stageInfo ? stageInfo.color : '#3b82f6',
       borderRadius: 2,
@@ -2893,6 +3207,8 @@ function openAdminAuthModal() {
 
 function closeAdminAuthModal() {
   const modal = document.getElementById('modal-admin-auth')
+  const input = document.getElementById('admin-password-input')
+  if (input) input.value = ''
   if (modal) modal.classList.remove('active')
 }
 
@@ -2901,7 +3217,8 @@ async function submitAdminAuth() {
   const error = document.getElementById('admin-auth-error')
   const entered = (input ? input.value : '').trim()
 
-  const currentPass = currentAdminConfig.admin_password || DEFAULT_ADMIN_PASSWORD_HASH
+  const currentPass =
+    currentAdminConfig.admin_password || DEFAULT_ADMIN_PASSWORD_HASH
 
   // Hashing de la contraseña ingresada
   const enteredHash = await hashPasswordSHA256(entered)

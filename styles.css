@@ -72,6 +72,10 @@
   padding: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family:
     'Outfit',
@@ -84,10 +88,32 @@ body {
   min-height: 100vh;
   padding: 24px;
   line-height: 1.5;
+  scrollbar-gutter: stable;
   transition:
     background-color var(--transition-normal),
     color var(--transition-normal);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Sleek Scrollbar (evita barras toscas de Windows y saltos de layout) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 
 /* ================= Loader Splash Screen ================= */
@@ -706,6 +732,13 @@ body {
   border-color: var(--brand-primary);
 }
 
+.search-input::-webkit-search-decoration,
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-results-button,
+.search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+}
+
 .search-icon {
   position: absolute;
   left: 11px;
@@ -1141,10 +1174,12 @@ body {
   border-radius: var(--border-radius-lg);
   box-shadow: var(--card-shadow);
   margin-bottom: 24px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .panel-header {
+  border-top-left-radius: var(--border-radius-lg);
+  border-top-right-radius: var(--border-radius-lg);
   padding: 18px 24px;
   border-bottom: 1px solid var(--card-border);
   display: flex;
@@ -1231,6 +1266,9 @@ body {
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -1335,39 +1373,60 @@ tfoot td {
   background: rgba(241, 90, 36, 0.06);
 }
 
-.table-tooltip {
+/* Los tooltips inline permanecen como contenedor de datos, no se muestran directamente en la tabla para evitar que causen scrollbars internos o sean recortados */
+.hover-cell .table-tooltip {
+  display: none !important;
+}
+
+/* ================= Global Floating Tooltip Portal (Tabla) ================= */
+/* Se sobrepone a toda la interfaz, bordes y tarjetas sin recortes ni saltos */
+.table-floating-tooltip {
+  position: fixed;
   display: none;
-  position: absolute;
-  bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
   background: #ffffff;
   color: var(--text-main);
   padding: 12px 16px;
   border-radius: 12px;
   box-shadow:
-    0 12px 30px -4px rgba(0, 45, 86, 0.18),
-    0 4px 12px -2px rgba(0, 0, 0, 0.08);
-  z-index: 300;
+    0 16px 36px -4px rgba(0, 45, 86, 0.22),
+    0 6px 16px -2px rgba(0, 0, 0, 0.08);
+  z-index: 999999;
   min-width: 220px;
+  max-width: 340px;
   text-align: left;
   border: 1px solid #e2e8f0;
   font-size: 0.76rem;
-  pointer-events: none;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
 }
 
-.table-tooltip::after {
+.table-floating-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.table-floating-tooltip::after {
   content: '';
   position: absolute;
-  top: 100%;
-  left: 50%;
+  left: var(--arrow-left, 50%);
   transform: translateX(-50%);
   border-width: 6px;
   border-style: solid;
+}
+
+.table-floating-tooltip[data-arrow="down"]::after {
+  top: 100%;
   border-color: #ffffff transparent transparent transparent;
 }
 
-.table-tooltip .tt-title {
+.table-floating-tooltip[data-arrow="up"]::after {
+  bottom: 100%;
+  border-color: transparent transparent #ffffff transparent;
+}
+
+.table-floating-tooltip .tt-title {
   color: var(--secondary);
   border-bottom: 1.5px solid #edf2f7;
   font-size: 0.74rem;
@@ -1378,7 +1437,7 @@ tfoot td {
   letter-spacing: 0.03em;
 }
 
-.table-tooltip .tt-row {
+.table-floating-tooltip .tt-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 5px;
@@ -1386,48 +1445,53 @@ tfoot td {
   font-size: 0.76rem;
 }
 
-.table-tooltip .tt-row span {
+.table-floating-tooltip .tt-row span {
   font-weight: 500;
   color: var(--text-main);
 }
 
-.hover-cell:hover .table-tooltip {
-  display: block;
-  animation: fadeIn 0.15s ease-out;
-}
-
-/* Nested Tooltip (Detalle por Admisiones) */
+/* Detalle por Admisión anidado */
+.table-floating-tooltip .nested-hover,
 .nested-hover {
   position: relative;
   padding: 4px 0;
   border-bottom: 1px dashed #e2e8f0;
-  pointer-events: auto;
+  cursor: default;
 }
 
+.table-floating-tooltip .nested-hover:hover .nested-tooltip,
+.nested-hover:hover .nested-tooltip {
+  display: block;
+}
+
+.table-floating-tooltip .nested-tooltip,
 .nested-tooltip {
   display: none;
   position: absolute;
-  left: 105%;
+  left: 102%;
   top: 0;
   background: #ffffff;
   color: var(--text-main);
   padding: 10px 14px;
   border-radius: 10px;
   box-shadow:
-    0 12px 30px -4px rgba(0, 45, 86, 0.18),
+    0 12px 30px -4px rgba(0, 45, 86, 0.22),
     0 4px 12px -2px rgba(0, 0, 0, 0.08);
-  z-index: 350;
-  min-width: 190px;
   border: 1px solid #e2e8f0;
+  min-width: 190px;
+  z-index: 1000000;
+  font-size: 0.74rem;
 }
 
+.table-floating-tooltip.flip-nested .nested-tooltip {
+  left: auto;
+  right: 102%;
+}
+
+.table-floating-tooltip .nested-tooltip .tt-row span,
 .nested-tooltip .tt-row span {
   font-weight: 500;
   color: var(--text-main);
-}
-
-.nested-hover:hover .nested-tooltip {
-  display: block;
 }
 
 /* Effectiveness Rate Bar */
@@ -1696,10 +1760,39 @@ tfoot td {
   gap: 6px;
 }
 
-/* ================= Responsive Styles ================= */
-@media (max-width: 1024px) {
+/* ================= Comprehensive Responsive Styles ================= */
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+  .filter-grid-main,
+  .filter-grid-stages {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
   .charts-grid-2 {
     grid-template-columns: 1fr;
+  }
+  .header-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .header-right {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .filter-grid-main,
+  .filter-grid-stages,
+  .filter-grid-secondary,
+  .filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 
@@ -1707,25 +1800,258 @@ tfoot td {
   body {
     padding: 12px;
   }
+
   .header-card {
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border-radius: var(--border-radius-md);
+  }
+
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .brand-title-wrap h1 {
+    font-size: 1.15rem;
+  }
+
+  .brand-title-wrap p {
+    font-size: 0.72rem;
+  }
+
+  .status-badge {
+    font-size: 0.74rem;
+    padding: 5px 10px;
+  }
+
+  .filters-panel {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .filter-section-title {
+    font-size: 0.82rem;
+  }
+
+  .filter-grid-main,
+  .filter-grid-stages,
+  .filter-grid-secondary,
+  .filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .dropdown-menu {
+    min-width: 220px;
+    max-width: calc(100vw - 44px);
+  }
+
+  #drop-adv {
+    min-width: unset;
+    width: 100%;
+    max-width: calc(100vw - 44px);
+  }
+
+  .secondary-filters {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
-  .header-right {
-    width: 100%;
-    justify-content: space-between;
+
+  .filter-pills {
+    flex-wrap: wrap;
+    gap: 6px;
   }
+
   .kpi-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
   }
-  .filter-grid {
-    grid-template-columns: 1fr;
+
+  .kpi-card {
+    padding: 16px;
+  }
+
+  .kpi-value {
+    font-size: 1.75rem;
+  }
+
+  .kpi-tooltip {
+    max-width: calc(100vw - 32px);
+  }
+
+  .panel {
+    margin-bottom: 16px;
+  }
+
+  .panel-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .panel-title h2 {
+    font-size: 1.05rem;
+  }
+
+  .tabs-nav {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px;
+  }
+
+  .tabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  .tab-content {
+    padding: 16px;
+  }
+
+  #tab-bar .chart-wrapper {
+    height: 320px;
+  }
+
+  .chart-wrapper {
+    height: 290px;
+  }
+
+  th,
+  td {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.78rem;
+  }
+
+  .asesor-name {
+    font-size: 0.82rem;
+  }
+
+  .explorer-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .search-box {
+    min-width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .modal-container,
+  .admin-modal-card {
+    max-width: 96vw;
+    max-height: 92vh;
+    border-radius: var(--border-radius-lg);
+  }
+
+  .admin-modal-header {
+    padding: 14px 18px;
+  }
+
+  .admin-modal-body {
+    padding: 16px;
+  }
+
+  .admin-category-card {
+    padding: 14px;
+  }
+
+  .table-floating-tooltip .nested-tooltip {
+    position: static;
+    box-shadow: none;
+    border: none;
+    padding: 6px 0 0 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+    margin-top: 4px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 520px) {
+  body {
+    padding: 8px;
+  }
+
+  .header-card {
+    padding: 12px;
+  }
+
+  .brand-title-wrap h1 {
+    font-size: 1.05rem;
+  }
+
+  .header-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-right .btn {
+    width: 100%;
+    text-align: center;
+  }
+
   .kpi-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .filter-grid-main,
+  .filter-grid-stages,
+  .filter-grid-secondary,
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-select {
+    width: 100%;
+  }
+
+  .dropdown-menu,
+  #drop-adv {
+    min-width: 100%;
+    max-width: calc(100vw - 28px);
+    width: 100%;
+  }
+
+  #tab-bar .chart-wrapper {
+    height: 270px;
+  }
+
+  .chart-wrapper {
+    height: 250px;
+  }
+
+  .panel-header {
+    padding: 12px;
+  }
+
+  .tab-content {
+    padding: 12px;
   }
 }
 
