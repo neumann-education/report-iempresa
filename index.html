@@ -1,2160 +1,1425 @@
 <!doctype html>
-<html lang="es" data-theme="light">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema IEmpresa Dashboard - Analytics</title>
-    <link rel="icon" type="image/png" href="img/logo_iempresa.png" />
+    <title>Preguntas Frecuentes | Instituto de la Empresa - IEmpresa</title>
+    <meta
+      name="description"
+      content="Preguntas Frecuentes del Instituto de la Empresa (IEmpresa). Encuentra información sobre plataformas virtuales, evaluaciones, notas, pagos BCP y trámites."
+    />
+    <meta
+      name="keywords"
+      content="preguntas frecuentes iempresa, soporte iempresa, campus virtual iempresa, subsanacion iempresa, constancia notas iempresa"
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/webp" href="assets/logo_ie_c_1x.webp" />
+
+    <!-- Google Fonts: Raleway & Public Sans (Tipografía oficial de IEmpresa) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600&family=Raleway:ital,wght@0,300;0,400;0,500;0,600&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Chart.js & Plugins -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <!-- Supabase JS Client v2 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome 6 CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
 
+    <!-- Estilos Oficiales -->
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <!-- SPLASH SCREEN DE CARGA -->
-    <div id="loader" class="splash-screen">
-      <div class="splash-card">
-        <div class="splash-logo-container">
-          <div class="splash-logo-badge">⚡</div>
-          <span class="splash-logo-text">IEmpresa Analytics</span>
-        </div>
-        <p class="splash-subtitle">Business Intelligence</p>
-        <div class="loader-bar-container">
-          <div class="loader-bar-fill"></div>
-        </div>
-        <p class="splash-loading-text" id="loader-msg">
-          Inicializando conexión Supabase y módulos...
-        </p>
-      </div>
-    </div>
-
-    <div class="app-container" id="app">
-      <!-- HEADER PRINCIPAL -->
-      <header class="header-card">
-        <div class="header-left">
-          <div class="brand-icon">📈</div>
-          <div class="brand-title-wrap">
-            <h1>IEmpresa Master Analytics</h1>
-            <p>
-              Control de Gestión Comercial, Filtros Multidimensionales y Embudo
-              de Ventas
-            </p>
-          </div>
-        </div>
-
-        <div class="header-right">
-          <!-- Indicador de Estado de Conexión (Botón camuflado admin con 5 clics) -->
-          <div
-            class="status-badge"
-            id="connection-badge"
-            onclick="handleAdminBadgeClick()"
-            title="IEmpresa Master Analytics"
-            style="cursor: pointer; user-select: none"
-          >
-            <span class="pulse-dot"></span>
-            <span id="connection-status-text">Conectando...</span>
-          </div>
-
-          <!-- Botones de Acción Rápida -->
-
-          <button
-            class="btn"
-            onclick="exportToCSV()"
-            title="Exportar data filtrada a archivo CSV"
-          >
-            <span>📥 Exportar CSV</span>
-          </button>
-        </div>
-      </header>
-
-      <!-- PANEL MAESTRO DE FILTROS ("UN MONTÓN DE FILTROS") -->
-      <section class="filters-panel">
-        <!-- SECCIÓN 1: FILTROS PRINCIPALES (MÁS USADOS) -->
-        <div class="filter-section-group" id="sec-filtros-1">
-          <div class="filter-section-header">
-            <span class="filter-section-badge">1</span>
-            <span class="filter-section-title">Filtros Principales</span>
-          </div>
-          <div class="filter-grid filter-grid-main">
-            <!-- 1. Rango de Fechas (Creación) -->
-            <div class="filter-item" id="fitem-crea">
-              <label class="filter-label">
-                <span>Fecha de Creación</span>
-                <span class="count" id="count-crea">Todo</span>
-              </label>
-              <div class="custom-select" id="box-crea">
-                <div class="select-btn" onclick="toggleDropdown('drop-crea')">
-                  <span class="btn-text" id="lbl-crea">Todas las fechas</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-crea"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="date-range-content">
-                    <div class="date-presets">
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePreset('today')"
-                      >
-                        Hoy
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePreset('yesterday')"
-                      >
-                        Ayer
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePreset('7days')"
-                      >
-                        Últimos 7d
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePreset('30days')"
-                      >
-                        Últimos 30d
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePreset('thisMonth')"
-                      >
-                        Este Mes
-                      </button>
-                      <button class="preset-btn" onclick="setDatePreset('all')">
-                        Todo
-                      </button>
-                    </div>
-                    <div class="date-input-group">
-                      <p>Desde:</p>
-                      <input
-                        type="date"
-                        id="crea-start"
-                        onchange="applyCustomDateRange()"
-                      />
-                    </div>
-                    <div class="date-input-group">
-                      <p>Hasta:</p>
-                      <input
-                        type="date"
-                        id="crea-end"
-                        onchange="applyCustomDateRange()"
-                      />
-                    </div>
-                    <div class="dropdown-actions">
-                      <button
-                        onclick="clearDateFilter()"
-                        style="
-                          color: var(--status-perdida);
-                          width: 100%;
-                          text-align: center;
-                        "
-                      >
-                        Limpiar Fechas
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 2. Asesores Oficiales (Lista 50% más ancha) -->
-            <div class="filter-item" id="fitem-adv">
-              <label class="filter-label">
-                <span>Asesor Comercial</span>
-                <span class="count" id="count-adv">Todo</span>
-              </label>
-              <div class="custom-select" id="box-adv">
-                <div class="select-btn" onclick="toggleDropdown('drop-adv')">
-                  <span class="btn-text" id="lbl-adv">Todos los asesores</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-adv"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('adv', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('adv', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar asesor..."
-                    oninput="filterDropdownOptions('adv-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="adv-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 3. Pipeline / Admisiones -->
-            <div class="filter-item" id="fitem-pipeline">
-              <label class="filter-label">
-                <span>Pipeline / Admisión</span>
-                <span class="count" id="count-pipeline">Todo</span>
-              </label>
-              <div class="custom-select" id="box-pipeline">
-                <div
-                  class="select-btn"
-                  onclick="toggleDropdown('drop-pipeline')"
-                >
-                  <span class="btn-text" id="lbl-pipeline"
-                    >Todas las admisiones</span
-                  >
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-pipeline"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('pipeline', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('pipeline', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <div class="dropdown-list" id="pipeline-list"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN 2: ETAPAS & CAMBIO DE FASE -->
-        <div class="filter-section-group" id="sec-filtros-2">
-          <div class="filter-section-header">
-            <span class="filter-section-badge">2</span>
-            <span class="filter-section-title">Etapas & Fecha de Cambio</span>
-          </div>
-          <div class="filter-grid filter-grid-stages">
-            <!-- 4. Etapas / Fases (C33) -->
-            <div class="filter-item" id="fitem-stage">
-              <label class="filter-label">
-                <span>Etapas</span>
-                <span class="count" id="count-stage">Todo</span>
-              </label>
-              <div class="custom-select" id="box-stage">
-                <div class="select-btn" onclick="toggleDropdown('drop-stage')">
-                  <span class="btn-text" id="lbl-stage">Todas las etapas</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-stage"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('stage', true)">
-                      Sel. Todas
-                    </button>
-                    <button onclick="toggleAllFilters('stage', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <div class="dropdown-list" id="stage-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 5. Fecha de Cambio de la Etapa -->
-            <div class="filter-item" id="fitem-cambio">
-              <label class="filter-label">
-                <span>F. Cambio Etapa</span>
-                <span class="count" id="count-cambio">Todo</span>
-              </label>
-              <div class="custom-select" id="box-cambio">
-                <div class="select-btn" onclick="toggleDropdown('drop-cambio')">
-                  <span class="btn-text" id="lbl-cambio">Todas las fechas</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-cambio"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="date-range-content">
-                    <div class="date-presets">
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('today')"
-                      >
-                        Hoy
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('yesterday')"
-                      >
-                        Ayer
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('7days')"
-                      >
-                        Últimos 7d
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('30days')"
-                      >
-                        Últimos 30d
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('thisMonth')"
-                      >
-                        Este Mes
-                      </button>
-                      <button
-                        class="preset-btn"
-                        onclick="setDatePresetCambio('all')"
-                      >
-                        Todo
-                      </button>
-                    </div>
-                    <div class="date-input-group">
-                      <p>Desde:</p>
-                      <input
-                        type="date"
-                        id="cambio-start"
-                        onchange="applyCustomDateRangeCambio()"
-                      />
-                    </div>
-                    <div class="date-input-group">
-                      <p>Hasta:</p>
-                      <input
-                        type="date"
-                        id="cambio-end"
-                        onchange="applyCustomDateRangeCambio()"
-                      />
-                    </div>
-                    <div class="dropdown-actions">
-                      <button
-                        onclick="clearDateFilterCambio()"
-                        style="
-                          color: var(--status-perdida);
-                          width: 100%;
-                          text-align: center;
-                        "
-                      >
-                        Limpiar Fechas
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN 3: ATRIBUTOS DEL LEAD & SEGMENTACIÓN SECUNDARIA -->
-        <div class="filter-section-group" id="sec-filtros-3">
-          <div class="filter-section-header">
-            <span class="filter-section-badge">3</span>
-            <span class="filter-section-title"
-              >Segmentación de Leads (Filtros Adicionales)</span
-            >
-          </div>
-          <div class="filter-grid filter-grid-secondary">
-            <!-- 6. Programa Académico -->
-            <div class="filter-item" id="fitem-program">
-              <label class="filter-label">
-                <span>Programa Académico</span>
-                <span class="count" id="count-program">Todo</span>
-              </label>
-              <div class="custom-select" id="box-program">
-                <div
-                  class="select-btn"
-                  onclick="toggleDropdown('drop-program')"
-                >
-                  <span class="btn-text" id="lbl-program"
-                    >Todos los programas</span
-                  >
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-program"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('program', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('program', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar programa..."
-                    oninput="filterDropdownOptions('program-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="program-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 7. Origen / Canal -->
-            <div class="filter-item" id="fitem-origin">
-              <label class="filter-label">
-                <span>Origen / Canal</span>
-                <span class="count" id="count-origin">Todo</span>
-              </label>
-              <div class="custom-select" id="box-origin">
-                <div class="select-btn" onclick="toggleDropdown('drop-origin')">
-                  <span class="btn-text" id="lbl-origin"
-                    >Todos los orígenes</span
-                  >
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-origin"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('origin', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('origin', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar origen..."
-                    oninput="filterDropdownOptions('origin-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="origin-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 8. Ciudad -->
-            <div class="filter-item" id="fitem-ciudad">
-              <label class="filter-label">
-                <span>Ciudad</span>
-                <span class="count" id="count-ciudad">Todo</span>
-              </label>
-              <div class="custom-select" id="box-ciudad">
-                <div class="select-btn" onclick="toggleDropdown('drop-ciudad')">
-                  <span class="btn-text" id="lbl-ciudad"
-                    >Todas las ciudades</span
-                  >
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-ciudad"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('ciudad', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('ciudad', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar ciudad..."
-                    oninput="filterDropdownOptions('ciudad-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="ciudad-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 9. Nivel de Estudio -->
-            <div class="filter-item" id="fitem-nivel">
-              <label class="filter-label">
-                <span>Nivel de Estudio</span>
-                <span class="count" id="count-nivel">Todo</span>
-              </label>
-              <div class="custom-select" id="box-nivel">
-                <div class="select-btn" onclick="toggleDropdown('drop-nivel')">
-                  <span class="btn-text" id="lbl-nivel">Todos los niveles</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-nivel"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('nivel', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('nivel', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar nivel..."
-                    oninput="filterDropdownOptions('nivel-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="nivel-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 10. Medio de Contacto -->
-            <div class="filter-item" id="fitem-medio">
-              <label class="filter-label">
-                <span>Medio Contacto</span>
-                <span class="count" id="count-medio">Todo</span>
-              </label>
-              <div class="custom-select" id="box-medio">
-                <div class="select-btn" onclick="toggleDropdown('drop-medio')">
-                  <span class="btn-text" id="lbl-medio">Todos los medios</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-medio"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('medio', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('medio', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    class="dropdown-search"
-                    placeholder="Filtrar medio..."
-                    oninput="filterDropdownOptions('medio-list', this.value)"
-                  />
-                  <div class="dropdown-list" id="medio-list"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 11. Calificación IA -->
-            <div class="filter-item" id="fitem-ia">
-              <label class="filter-label">
-                <span>Calificación IA</span>
-                <span class="count" id="count-ia">Todo</span>
-              </label>
-              <div class="custom-select" id="box-ia">
-                <div class="select-btn" onclick="toggleDropdown('drop-ia')">
-                  <span class="btn-text" id="lbl-ia">Todas las calif.</span>
-                  <span class="arrow">▼</span>
-                </div>
-                <div
-                  id="drop-ia"
-                  class="dropdown-menu"
-                  onclick="event.stopPropagation()"
-                >
-                  <div class="dropdown-actions">
-                    <button onclick="toggleAllFilters('ia', true)">
-                      Sel. Todos
-                    </button>
-                    <button onclick="toggleAllFilters('ia', false)">
-                      Limpiar
-                    </button>
-                  </div>
-                  <div class="dropdown-list" id="ia-list"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN DE FILTROS AGRUPADOS (UTM, CHATFUEL, REMARKETING) -->
-        <div
-          class="grouped-filters-container"
-          id="grouped-filters-box"
-          data-cat="sec-filtros-4"
-        >
-          <div class="grouped-filters-header" onclick="toggleGroupedFilters()">
-            <div class="grouped-header-left">
-              <span class="filter-section-badge">4</span>
-              <span class="grouped-icon">🎯</span>
-              <div class="grouped-title-wrap">
-                <span class="grouped-title">
-                  Filtros de Campaña, Atribución y Remarketing
-                  <span
-                    class="grouped-badge"
-                    id="badge-grouped-count"
-                    style="display: none"
-                    >0 activos</span
-                  >
-                </span>
-                <span class="grouped-subtitle"
-                  >Parámetros UTM, Chatfuel y RMKT organizados en un panel
-                  secundario</span
-                >
-              </div>
-            </div>
-            <div class="grouped-header-right">
-              <span id="grouped-toggle-text">Mostrar filtros agrupados</span>
-              <span class="arrow" id="grouped-toggle-arrow">▼</span>
-            </div>
-          </div>
-
-          <div class="grouped-filters-content" id="grouped-filters-content">
-            <div class="grouped-subgroups-grid">
-              <!-- Subgrupo 1: Parámetros UTM -->
-              <div class="grouped-subgroup-card" id="fgroup-utm">
-                <div class="subgroup-card-header">
-                  <span class="subgroup-tag">🌐 Parámetros UTM Web</span>
-                  <span class="subgroup-desc">Atribución de Tráfico</span>
-                </div>
-                <div class="subgroup-filters-list">
-                  <!-- UTM Source -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Source</span>
-                      <span class="count" id="count-utm_source">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_source">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_source')"
-                      >
-                        <span class="btn-text" id="lbl-utm_source"
-                          >Todos los sources</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_source"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_source', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_source', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar source..."
-                          oninput="
-                            filterDropdownOptions('utm_source-list', this.value)
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_source-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM Medium -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Medium</span>
-                      <span class="count" id="count-utm_medium">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_medium">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_medium')"
-                      >
-                        <span class="btn-text" id="lbl-utm_medium"
-                          >Todos los mediums</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_medium"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_medium', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_medium', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar medium..."
-                          oninput="
-                            filterDropdownOptions('utm_medium-list', this.value)
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_medium-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM Campaign -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Campaign</span>
-                      <span class="count" id="count-utm_campaign">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_campaign">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_campaign')"
-                      >
-                        <span class="btn-text" id="lbl-utm_campaign"
-                          >Todas las campaigns</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_campaign"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_campaign', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_campaign', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar campaign..."
-                          oninput="
-                            filterDropdownOptions(
-                              'utm_campaign-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_campaign-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM Content -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Content</span>
-                      <span class="count" id="count-utm_content">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_content">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_content')"
-                      >
-                        <span class="btn-text" id="lbl-utm_content"
-                          >Todos los contents</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_content"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_content', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_content', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar content..."
-                          oninput="
-                            filterDropdownOptions(
-                              'utm_content-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_content-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM Term -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Term</span>
-                      <span class="count" id="count-utm_term">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_term">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_term')"
-                      >
-                        <span class="btn-text" id="lbl-utm_term"
-                          >Todos los terms</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_term"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button onclick="toggleAllFilters('utm_term', true)">
-                            Sel. Todos
-                          </button>
-                          <button onclick="toggleAllFilters('utm_term', false)">
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar term..."
-                          oninput="
-                            filterDropdownOptions('utm_term-list', this.value)
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_term-list"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Subgrupo 2: Chatfuel -->
-              <div class="grouped-subgroup-card" id="fgroup-chatfuel">
-                <div class="subgroup-card-header">
-                  <span class="subgroup-tag">🤖 Chatfuel & WhatsApp</span>
-                  <span class="subgroup-desc">Atribución Chatfuel (CH)</span>
-                </div>
-                <div class="subgroup-filters-list">
-                  <!-- Origen Chatfuel -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>Origen Chatfuel</span>
-                      <span class="count" id="count-origen_chatfuel">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-origen_chatfuel">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-origen_chatfuel')"
-                      >
-                        <span class="btn-text" id="lbl-origen_chatfuel"
-                          >Todos los orígenes CH</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-origen_chatfuel"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('origen_chatfuel', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('origen_chatfuel', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar origen CH..."
-                          oninput="
-                            filterDropdownOptions(
-                              'origen_chatfuel-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div
-                          class="dropdown-list"
-                          id="origen_chatfuel-list"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM_Campaign_CH -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Campaign CH</span>
-                      <span class="count" id="count-utm_campaign_ch">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_campaign_ch">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_campaign_ch')"
-                      >
-                        <span class="btn-text" id="lbl-utm_campaign_ch"
-                          >Todas las campañas CH</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_campaign_ch"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_campaign_ch', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_campaign_ch', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar campaña CH..."
-                          oninput="
-                            filterDropdownOptions(
-                              'utm_campaign_ch-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div
-                          class="dropdown-list"
-                          id="utm_campaign_ch-list"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM_Content_CH -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Content CH</span>
-                      <span class="count" id="count-utm_content_ch">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_content_ch">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_content_ch')"
-                      >
-                        <span class="btn-text" id="lbl-utm_content_ch"
-                          >Todos los contenidos CH</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_content_ch"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_content_ch', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_content_ch', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar contenido CH..."
-                          oninput="
-                            filterDropdownOptions(
-                              'utm_content_ch-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div
-                          class="dropdown-list"
-                          id="utm_content_ch-list"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- UTM_Term_CH -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>UTM Term CH</span>
-                      <span class="count" id="count-utm_term_ch">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-utm_term_ch">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-utm_term_ch')"
-                      >
-                        <span class="btn-text" id="lbl-utm_term_ch"
-                          >Todos los terms CH</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-utm_term_ch"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('utm_term_ch', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('utm_term_ch', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar term CH..."
-                          oninput="
-                            filterDropdownOptions(
-                              'utm_term_ch-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="utm_term_ch-list"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Subgrupo 3: Remarketing -->
-              <div class="grouped-subgroup-card" id="fgroup-rmkt">
-                <div class="subgroup-card-header">
-                  <span class="subgroup-tag">🔄 Remarketing (RMKT)</span>
-                  <span class="subgroup-desc">Campañas y Recontactos</span>
-                </div>
-                <div class="subgroup-filters-list">
-                  <!-- RMKT_Origen -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>RMKT Origen</span>
-                      <span class="count" id="count-rmkt_origen">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-rmkt_origen">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-rmkt_origen')"
-                      >
-                        <span class="btn-text" id="lbl-rmkt_origen"
-                          >Todos los orígenes RMKT</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-rmkt_origen"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('rmkt_origen', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('rmkt_origen', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar origen RMKT..."
-                          oninput="
-                            filterDropdownOptions(
-                              'rmkt_origen-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="rmkt_origen-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- RMKT_Respuesta -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>RMKT Respuesta</span>
-                      <span class="count" id="count-rmkt_respuesta">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-rmkt_respuesta">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-rmkt_respuesta')"
-                      >
-                        <span class="btn-text" id="lbl-rmkt_respuesta"
-                          >Todas las respuestas RMKT</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-rmkt_respuesta"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('rmkt_respuesta', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('rmkt_respuesta', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar respuesta RMKT..."
-                          oninput="
-                            filterDropdownOptions(
-                              'rmkt_respuesta-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div
-                          class="dropdown-list"
-                          id="rmkt_respuesta-list"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- RMKT_Nombre -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>RMKT Nombre</span>
-                      <span class="count" id="count-rmkt_nombre">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-rmkt_nombre">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-rmkt_nombre')"
-                      >
-                        <span class="btn-text" id="lbl-rmkt_nombre"
-                          >Todos los nombres RMKT</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-rmkt_nombre"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('rmkt_nombre', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('rmkt_nombre', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar nombre RMKT..."
-                          oninput="
-                            filterDropdownOptions(
-                              'rmkt_nombre-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="rmkt_nombre-list"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- RMKT_detalles -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>RMKT Detalles</span>
-                      <span class="count" id="count-rmkt_detalles">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-rmkt_detalles">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-rmkt_detalles')"
-                      >
-                        <span class="btn-text" id="lbl-rmkt_detalles"
-                          >Todos los detalles RMKT</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-rmkt_detalles"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('rmkt_detalles', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('rmkt_detalles', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar detalles RMKT..."
-                          oninput="
-                            filterDropdownOptions(
-                              'rmkt_detalles-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div
-                          class="dropdown-list"
-                          id="rmkt_detalles-list"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- RMKT_Interes -->
-                  <div class="filter-item">
-                    <label class="filter-label">
-                      <span>RMKT Interés</span>
-                      <span class="count" id="count-rmkt_interes">Todo</span>
-                    </label>
-                    <div class="custom-select" id="box-rmkt_interes">
-                      <div
-                        class="select-btn"
-                        onclick="toggleDropdown('drop-rmkt_interes')"
-                      >
-                        <span class="btn-text" id="lbl-rmkt_interes"
-                          >Todos los intereses RMKT</span
-                        >
-                        <span class="arrow">▼</span>
-                      </div>
-                      <div
-                        id="drop-rmkt_interes"
-                        class="dropdown-menu"
-                        onclick="event.stopPropagation()"
-                      >
-                        <div class="dropdown-actions">
-                          <button
-                            onclick="toggleAllFilters('rmkt_interes', true)"
-                          >
-                            Sel. Todos
-                          </button>
-                          <button
-                            onclick="toggleAllFilters('rmkt_interes', false)"
-                          >
-                            Limpiar
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          class="dropdown-search"
-                          placeholder="Buscar interés RMKT..."
-                          oninput="
-                            filterDropdownOptions(
-                              'rmkt_interes-list',
-                              this.value,
-                            )
-                          "
-                        />
-                        <div class="dropdown-list" id="rmkt_interes-list"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Barra de Filtros Rápidos & Chips Activos -->
-        <div class="secondary-filters">
-          <div class="filter-pills" id="filter-pills-atajos">
-            <span
-              style="
-                font-size: 0.75rem;
-                font-weight: 600;
-                color: var(--text-muted);
-                margin-right: 4px;
-              "
-              >Atajos:</span
-            >
-
-            <button
-              class="filter-group-btn"
-              id="btn-group-nocontactable"
-              onclick="setQuickGroupFilter('nocontactable')"
-            >
-              No Contactables
-            </button>
-            <button
-              class="filter-group-btn"
-              id="btn-group-contactable"
-              onclick="setQuickGroupFilter('contactable')"
-            >
-              Contactables
-            </button>
-          </div>
-
-          <!-- Toggle Detalle por Admisión -->
-          <label
-            style="
-              font-size: 0.78rem;
-              font-weight: 500;
-              color: var(--text-muted);
-              display: flex;
-              align-items: center;
-              gap: 6px;
-              cursor: pointer;
-            "
-          >
-            <input
-              type="checkbox"
-              id="chk-adm-detail"
-              onchange="updateAll()"
-              style="accent-color: var(--brand-primary); cursor: pointer"
-            />
-            <span>Ver detalle por Admisión en tooltips</span>
-          </label>
-        </div>
-
-        <!-- Contenedor de Chips de Filtros Activos -->
-        <div class="active-chips-container" id="active-chips"></div>
-      </section>
-
-      <!-- TARJETAS KPIS PRINCIPALES -->
-      <section class="kpi-grid">
-        <!-- KPI 1: Prospectos Nuevos -->
-        <div class="kpi-card kpi-nuevos">
-          <div class="kpi-header">
-            <span class="kpi-title">Prospectos Nuevos</span>
-            <div class="kpi-icon">🎯</div>
-          </div>
-          <div class="kpi-value" id="kpi-nuevos-val">0</div>
-          <div class="kpi-tooltip" id="tt-nuevos"></div>
-        </div>
-
-        <!-- KPI 2: Gestión Comercial (Progreso) -->
-        <div class="kpi-card kpi-gestion">
-          <div class="kpi-header">
-            <span class="kpi-title">Gestión Comercial</span>
-            <div class="kpi-icon">⚡</div>
-          </div>
-          <div class="kpi-value" id="kpi-gestion-val">0</div>
-          <div class="kpi-tooltip" id="tt-gestion"></div>
-        </div>
-
-        <!-- KPI 3: Negociaciones Perdidas (Descartes) -->
-        <div class="kpi-card kpi-perdida">
-          <div class="kpi-header">
-            <span class="kpi-title">Negociaciones Perdidas</span>
-            <div class="kpi-icon">🚫</div>
-          </div>
-          <div class="kpi-value" id="kpi-perdida-val">0</div>
-          <div class="kpi-tooltip" id="tt-perdida"></div>
-        </div>
-
-        <!-- KPI 4: Cierres Exitosos (Cliente) -->
-        <div class="kpi-card kpi-exito">
-          <div class="kpi-header">
-            <span class="kpi-title">Cierres Exitosos</span>
-            <div class="kpi-icon">🏆</div>
-          </div>
-          <div class="kpi-value" id="kpi-exito-val">0</div>
-          <div class="kpi-tooltip" id="tt-exito"></div>
-        </div>
-
-        <!-- KPI 5: Total Negociaciones -->
-        <div class="kpi-card kpi-total">
-          <div class="kpi-header">
-            <span class="kpi-title">Total Negociaciones</span>
-            <div class="kpi-icon">📊</div>
-          </div>
-          <div class="kpi-value" id="kpi-total-val">0</div>
-          <div class="kpi-tooltip" id="tt-total"></div>
-        </div>
-      </section>
-
-      <!-- PANEL 1: TABLA DE RENDIMIENTO COMERCIAL POR ASESOR -->
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <h2>📊 Rendimiento Comercial por Asesor Oficial</h2>
-            <span class="badge" id="badge-asesor-count"
-              >11 Asesores Oficiales</span
-            >
-          </div>
-          <div style="font-size: 0.75rem; color: var(--text-muted)">
-            <span
-              >Pasa el cursor sobre los números para ver el desglose por
-              etapas</span
-            >
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table id="performance-table">
-            <thead>
-              <tr>
-                <th style="min-width: 220px">Asesor Oficial</th>
-                <th style="text-align: center">Leads en Gestión</th>
-                <th style="text-align: center; color: var(--status-perdida)">
-                  Leads Perdidos
-                </th>
-                <th style="text-align: center">Cierres Exitosos</th>
-                <th style="min-width: 180px">Ratio de Efectividad</th>
-                <th style="text-align: center">Total Leads</th>
-                <th style="text-align: center; width: 90px">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="table-body-asesores"></tbody>
-            <tfoot id="table-foot-asesores"></tfoot>
-          </table>
-        </div>
-      </section>
-
-      <!-- PANEL 2: GRÁFICOS Y ANÁLISIS VISUAL + EXPLORADOR DE LEADS -->
-      <section class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <h2>📈 Inteligencia Visual & Explorador de Datos</h2>
-          </div>
-          <div class="tabs-nav">
-            <button class="tab-btn active" onclick="switchVisualTab('tab-bar')">
-              Progreso por Asesor
-            </button>
-            <button class="tab-btn" onclick="switchVisualTab('tab-pie')">
-              Distribución Global
-            </button>
-            <button class="tab-btn" onclick="switchVisualTab('tab-analytics')">
-              Programas & Origen
-            </button>
-            <button class="tab-btn" onclick="switchVisualTab('tab-explorer')">
-              Explorador de Leads
-            </button>
-          </div>
-        </div>
-
-        <!-- Tab 1: Gráfico de Barras Stacked por Asesor -->
-        <div id="tab-bar" class="tab-content active">
-          <div class="chart-wrapper" style="height: 420px">
-            <canvas id="barChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Tab 2: Distribución Global (Etapas y Descartes) -->
-        <div id="tab-pie" class="tab-content">
-          <div class="charts-grid-2">
-            <div class="chart-card">
-              <div class="chart-header">
-                <h3>Distribución de Etapas Activas (Pipeline)</h3>
-              </div>
-              <div class="chart-wrapper">
-                <canvas id="pieChartPipeline"></canvas>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <h3>Análisis de Pérdidas y Descartes</h3>
-              </div>
-              <div class="chart-wrapper">
-                <canvas id="pieChartLoss"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 3: Programas & Orígenes -->
-        <div id="tab-analytics" class="tab-content">
-          <div class="charts-grid-2">
-            <div class="chart-card">
-              <div class="chart-header">
-                <h3>Leads por Programa de Interés</h3>
-              </div>
-              <div class="chart-wrapper">
-                <canvas id="barChartPrograms"></canvas>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-header">
-                <h3>Distribución por Canal / Origen</h3>
-              </div>
-              <div class="chart-wrapper">
-                <canvas id="donutChartOrigins"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 4: Explorador Detallado de Leads -->
-        <div id="tab-explorer" class="tab-content">
-          <div class="explorer-toolbar">
-            <div
-              style="
-                font-size: 0.85rem;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-wrap: wrap;
-              "
-            >
-              <span
-                >Mostrando
-                <span
-                  id="explorer-count"
-                  style="color: var(--brand-primary); font-weight: 600"
-                  >0</span
-                >
-                registros filtrados</span
-              >
-              <span
-                id="explorer-advisor-badge"
-                style="
-                  display: none;
-                  background: var(--brand-primary-light);
-                  color: var(--brand-primary);
-                  padding: 3px 10px;
-                  border-radius: 20px;
-                  font-size: 0.75rem;
-                  align-items: center;
-                  gap: 6px;
-                "
-              >
-                Asesor:
-                <strong
-                  id="explorer-advisor-name"
-                  style="font-weight: 600"
-                ></strong>
-                <button
-                  onclick="clearAdvisorFilter()"
-                  style="
-                    background: none;
-                    border: none;
-                    color: inherit;
-                    font-weight: 600;
-                    cursor: pointer;
-                    padding: 0 4px;
-                  "
-                  title="Ver todos los asesores"
-                >
-                  ✕
-                </button>
-              </span>
-            </div>
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-wrap: wrap;
-              "
-            >
-              <!-- Búsqueda Rápida en Explorador de Leads -->
-              <div
-                class="search-box"
-                style="min-width: 270px; max-width: 360px"
-              >
-                <span class="search-icon">🔍</span>
-                <input
-                  type="search"
-                  id="search-input"
-                  class="search-input"
-                  name="dashboard_lead_search"
-                  placeholder="Buscar por ID, nombre, teléfono..."
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-form-type="other"
-                  data-bwignore="true"
-                  oninput="handleSearch(this.value)"
-                />
-              </div>
-              <button
-                class="btn"
-                onclick="exportToCSV()"
-                title="Descargar registros filtrados en CSV"
-              >
-                📥 Descargar Filtrados
-              </button>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID Lead</th>
-                  <th>Responsable</th>
-                  <th>Etapa</th>
-                  <th>Programa</th>
-                  <th>Origen</th>
-                  <th>Calificación IA</th>
-                  <th>Fecha Creación</th>
-                  <th>Bitrix24</th>
-                </tr>
-              </thead>
-              <tbody id="table-body-explorer"></tbody>
-            </table>
-          </div>
-
-          <div class="pagination">
-            <span id="pagination-info">Página 1 de 1</span>
-            <div class="pagination-controls">
-              <button class="btn" id="btn-page-prev" onclick="changePage(-1)">
-                ← Anterior
-              </button>
-              <button class="btn" id="btn-page-next" onclick="changePage(1)">
-                Siguiente →
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-    <!-- ================= MODAL 1: AUTENTICACIÓN ADMIN (5 CLICS) ================= -->
-    <div
-      class="admin-modal-overlay"
-      id="modal-admin-auth"
-      onclick="handleModalOverlayClick(event, 'modal-admin-auth')"
-    >
-      <div class="admin-modal-card admin-auth-card">
-        <div class="admin-modal-header">
-          <div class="admin-header-title">
-            <span class="admin-icon-badge">🔐</span>
-            <div>
-              <h3>Acceso de Administrador</h3>
-              <p>Gestión de Filtros del Dashboard</p>
-            </div>
-          </div>
-          <button
-            class="admin-close-btn"
-            onclick="closeAdminAuthModal()"
-            title="Cerrar modal"
-          >
-            ✕
-          </button>
-        </div>
-        <form
-          class="admin-modal-body"
-          autocomplete="off"
-          onsubmit="
-            event.preventDefault()
-            submitAdminAuth()
-          "
-        >
-          <!-- Decoy fields to capture browser autofill and prevent filling page inputs -->
-          <input
-            type="text"
-            name="username"
-            value="admin"
-            autocomplete="username"
-            style="
-              position: absolute;
-              left: -9999px;
-              width: 1px;
-              height: 1px;
-              opacity: 0;
-              pointer-events: none;
-            "
-            tabindex="-1"
-            aria-hidden="true"
+    <!-- ==========================================================================
+       0. Splash Screen de Carga Inicial (Transición suave de 3 segundos)
+       ========================================================================== -->
+    <div class="splash-screen" id="splashScreen" aria-live="polite">
+      <div class="splash-content">
+        <div class="splash-logo-wrap">
+          <img
+            src="assets/logo_ie_c_1x.webp"
+            alt="Instituto de la Empresa"
+            class="splash-logo"
+            width="210"
+            height="54"
           />
-          <div class="admin-auth-intro">
+        </div>
+        <div class="splash-spinner-wrap">
+          <div class="splash-spinner"></div>
+        </div>
+        <p class="splash-text" id="splashText">
+          Cargando preguntas frecuentes...
+        </p>
+        <div class="splash-progress-bar">
+          <div class="splash-progress-fill" id="splashProgressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+       1. Barra Superior Negra (WhatsApp)
+       ========================================================================== -->
+    <div class="top-whatsapp-bar">
+      <div class="container top-whatsapp-content">
+        <a
+          href="https://wa.me/51974536105"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="topbar-whatsapp-link"
+        >
+          <i class="fab fa-whatsapp"></i>
+          <span>Información vía WhatsApp</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+       2. Barra de Navegación Oficial
+       ========================================================================== -->
+    <header class="site-header" id="siteHeader">
+      <div class="container navbar-container">
+        <!-- Logo -->
+        <a
+          href="https://www.iempresa.edu.pe/"
+          class="navbar-brand"
+          title="Instituto de la Empresa"
+        >
+          <img
+            src="assets/logo_ie_1x.webp"
+            alt="IEmpresa"
+            class="logo-white"
+            width="170"
+            height="44"
+          />
+          <img
+            src="assets/logo_ie_c_1x.webp"
+            alt="IEmpresa"
+            class="logo-color"
+            width="170"
+            height="44"
+          />
+        </a>
+
+        <!-- Menú de Navegación Simple y Homogéneo -->
+        <nav class="navbar-nav" aria-label="Menú principal">
+          <a href="https://www.iempresa.edu.pe/nosotros/" class="nav-link"
+            >NOSOTROS</a
+          >
+          <a
+            href="https://www.iempresa.edu.pe/licenciamiento-institucional/"
+            class="nav-link"
+            >LICENCIAMIENTO</a
+          >
+          <a href="https://www.iempresa.edu.pe/carreras/" class="nav-link"
+            >CARRERAS</a
+          >
+          <a
+            href="https://blackwell.university/lp/upgrade/peru-/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="nav-link"
+            >CONVENIO UNIVERSITARIO</a
+          >
+        </nav>
+
+        <!-- Botón Móvil -->
+        <button
+          class="mobile-nav-toggle"
+          id="mobileNavToggle"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Menú Móvil Lateral -->
+    <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
+    <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+      <a
+        href="https://www.iempresa.edu.pe/"
+        class="navbar-brand"
+        style="margin-bottom: 24px"
+      >
+        <img src="assets/logo_ie_c_1x.webp" alt="IEmpresa" width="160" />
+      </a>
+      <nav class="mobile-nav-list">
+        <a href="https://www.iempresa.edu.pe/nosotros/" class="nav-link"
+          >NOSOTROS</a
+        >
+        <a
+          href="https://www.iempresa.edu.pe/licenciamiento-institucional/"
+          class="nav-link"
+          >LICENCIAMIENTO</a
+        >
+        <a href="https://www.iempresa.edu.pe/carreras/" class="nav-link"
+          >CARRERAS</a
+        >
+        <a
+          href="https://blackwell.university/lp/upgrade/peru-/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nav-link"
+          >CONVENIO UNIVERSITARIO</a
+        >
+        <a href="https://www.iempresa.edu.pe/soporte/" class="nav-link"
+          >SOPORTE</a
+        >
+        <a
+          href="#preguntas"
+          class="nav-link"
+          style="color: var(--color-primary)"
+          >PREGUNTAS FRECUENTES</a
+        >
+      </nav>
+    </div>
+
+    <!-- ==========================================================================
+       3. Hero Section (Simple, Limpio y con Foto de Soporte, Idéntico a Imagen 2)
+       ========================================================================== -->
+    <section class="hero-soporte-style">
+      <div class="hero-soporte-overlay"></div>
+      <div class="container hero-soporte-container">
+        <div class="hero-soporte-content">
+          <h1 class="hero-soporte-title">Preguntas<br />Frecuentes</h1>
+          <p class="hero-soporte-subtitle">
+            ¿Tienes alguna duda o necesitas información adicional? Nuestro
+            equipo de soporte está listo para asistirte.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+       4. Sección de Bienvenida (Título Naranja Centrado & Buscador en Vivo)
+       ========================================================================== -->
+    <section class="faq-intro-section" id="preguntas">
+      <div class="container">
+        <h2 class="faq-intro-title">
+          Bienvenidos a las Preguntas Frecuentes del<br />Instituto de la
+          Empresa
+        </h2>
+        <p class="faq-intro-text">
+          Estamos aquí para ayudarte a resolver cualquier problema técnico,
+          administrativo o académico que puedas tener.
+        </p>
+
+        <!-- Buscador Interactivo en Vivo -->
+        <div class="search-container">
+          <form
+            class="search-box-wrap"
+            id="faqSearchForm"
+            onsubmit="event.preventDefault()"
+          >
+            <div class="search-icon">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <input
+              type="text"
+              id="faqSearchInput"
+              class="search-input"
+              placeholder="Buscar consulta (ej. subsanación, BCP, constancia, contraseñas, notas...)"
+              autocomplete="off"
+              aria-label="Buscar preguntas frecuentes"
+            />
+            <button
+              type="button"
+              class="search-clear-btn"
+              id="searchClearBtn"
+              title="Limpiar"
+              aria-label="Limpiar búsqueda"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button type="submit" class="search-btn-cta">
+              <i class="fa-solid fa-search"></i>
+              <span>Buscar</span>
+            </button>
+          </form>
+
+          <!-- Sugerencias Rápidas de Búsqueda -->
+          <div class="search-tags">
+            <span class="tag-label">Búsquedas sugeridas:</span>
+            <button type="button" class="tag-chip" data-search="subsanación">
+              Subsanación
+            </button>
+            <button type="button" class="tag-chip" data-search="constancia">
+              Constancia de notas
+            </button>
+            <button type="button" class="tag-chip" data-search="BCP">
+              Pagos BCP
+            </button>
+            <button type="button" class="tag-chip" data-search="campus">
+              Campus Virtual
+            </button>
+            <button type="button" class="tag-chip" data-search="rezagados">
+              Semana de rezagados
+            </button>
+            <button type="button" class="tag-chip" data-search="horario">
+              Horario de atención
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+       5. Listado de Preguntas Frecuentes (Accordion & Filtros)
+       ========================================================================== -->
+    <main class="faq-content-section">
+      <div class="container">
+        <!-- Barra de Controles y Filtros Minimalista (Combo-boxes) -->
+        <div class="faq-controls-bar">
+          <div class="faq-filters-group">
+            <!-- Combo-box de Categoría -->
+            <div class="filter-select-wrapper">
+              <label for="categorySelect" class="filter-select-label">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Categoría:</span>
+              </label>
+              <div class="custom-select-box">
+                <select
+                  id="categorySelect"
+                  class="filter-select"
+                  aria-label="Filtrar por categoría"
+                >
+                  <option value="all">Todas las categorías (17)</option>
+                  <option value="plataformas">Plataformas (3)</option>
+                  <option value="academico">Académico (8)</option>
+                  <option value="tramites">Trámites (3)</option>
+                  <option value="contacto">Atención / Contacto (3)</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <!-- Combo-box de Oficina -->
+            <div class="filter-select-wrapper">
+              <label for="officeSelect" class="filter-select-label">
+                <i class="fa-solid fa-building-user"></i>
+                <span>Oficina:</span>
+              </label>
+              <div class="custom-select-box">
+                <select
+                  id="officeSelect"
+                  class="filter-select"
+                  aria-label="Filtrar por oficina"
+                >
+                  <option value="all">Todas las oficinas (17)</option>
+                  <option value="Académico">Académico (7)</option>
+                  <option value="Soporte">Soporte (4)</option>
+                  <option value="OSE">OSE (2)</option>
+                  <option value="Cobranzas">Cobranzas (2)</option>
+                  <option value="Atención">Atención (2)</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-actions-group">
+            <!-- Contador de preguntas en vivo -->
+            <div class="faq-count-badge-wrap" id="faqCountSummary">
+              <span>Mostrando</span>
+              <strong id="visibleFaqsCount">17</strong>
+              <span>preguntas</span>
+            </div>
+
+            <!-- Botón Expandir / Contraer todas -->
+            <button
+              class="toggle-expand-btn"
+              id="toggleAllBtn"
+              title="Expandir o contraer todas las preguntas"
+              type="button"
+            >
+              <i class="fa-solid fa-arrows-up-down"></i>
+              <span id="toggleAllText">Expandir todas</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="faq-accordion-list" id="faqAccordion">
+          <article
+            class="faq-card is-destacado"
+            data-category="plataformas"
+            data-oficina="Soporte"
+            id="faq-1"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">01</span>
+
+                  <span class="faq-pill-tag pill-destacado"
+                    ><i class="fa-solid fa-star"></i> Destacado</span
+                  >
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cuáles son los medios o plataformas que ofrece Instituto De
+                  la empresa?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Contamos con la plataforma Campus que se puede acceder
+                  mediante (<a
+                    href="https://campus.empresa.edu.pe/login/index.php"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://campus.empresa.edu.pe/login/index.php</a
+                  >), el cual funciona desde los diferentes sistemas operativos
+                  Linux, Mac y Windows, asimismo podrás acceder al campus
+                  virtual desde cualquier dispositivo electrónico que tenga
+                  acceso a un navegador.
+                </p>
+                <p>
+                  Además puede acceder a su Información Académica mediante
+                  <a
+                    href="https://activa.education/"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://activa.education/</a
+                  >. Asimismo, se ofrecen accesos a las bibliotecas virtuales
+                  como Iberoteca.
+                </p>
+                <div>
+                  <a
+                    class="link-btn-portal"
+                    href="https://campus.empresa.edu.pe/login/index.php"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Campus Virtual</span>
+                  </a>
+                  <a
+                    class="link-btn-portal"
+                    href="https://activa.education/"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>Plataforma Activa</span>
+                  </a>
+                  <a
+                    class="link-btn-portal"
+                    href="https://www.iberoteca.net/"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>Iberoteca</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card is-destacado"
+            data-category="tramites"
+            data-oficina="OSE"
+            id="faq-2"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">02</span>
+
+                  <span class="faq-pill-tag pill-destacado"
+                    ><i class="fa-solid fa-star"></i> Destacado</span
+                  >
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cómo puedo tramitar una constancia de notas?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Ingresa a Activa &gt; Atención al Estudiante &gt; Mis
+                  Solicitudes &gt; Nueva Solicitud.<br />
+                  Selecciona Tipo de Solicitud: Documentos y elige Constancia de
+                  Notas.
+                </p>
+                <div class="content-box">
+                  <p>
+                    La constancia de notas tiene un costo de 20.00 soles y se
+                    realiza en un plazo de 2 días hábiles tras el pago mediante
+                    formato digital en PDF.
+                  </p>
+                </div>
+                <a
+                  class="link-btn-portal"
+                  href="https://activa.education/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                  <span>Ir a Plataforma Activa</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-4"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">03</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cómo puedo recuperar si desaprobé mi asignatura?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Si no aprobaste una asignatura, tienes la opción de
+                  recuperarla a través de un examen o un trabajo de subsanación,
+                  dependiendo del tipo de asignatura.
+                </p>
+                <p>
+                  Para asignaturas que no sean Experiencias Formativas, deberás
+                  solicitar un examen de subsanación. En cambio, si la
+                  asignatura es Experiencias Formativas, la recuperación se
+                  realizará mediante un trabajo de subsanación.
+                </p>
+                <div class="content-box">
+                  <p>
+                    Es importante tener en cuenta que el costo por cada
+                    asignatura desaprobada es de 50 soles. Asimismo, recuerda
+                    que solo puedes solicitar un máximo de tres exámenes o
+                    trabajos de subsanación por ciclo académico.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-5"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">04</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Puedo matricularme a un siguiente ciclo académico con
+                  asignaturas desaprobadas?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Si has desaprobado más de dos asignaturas en el ciclo
+                  académico actual, no podrás matricularte en el siguiente
+                  ciclo. En ese caso, deberás matricularte nuevamente en el
+                  ciclo actual y completar las asignaturas que desaprobaste.
+                  Recuerda que solo se te permite matricularse a un siguiente
+                  ciclo con un máximo de dos asignaturas desaprobadas.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Cobranzas"
+            id="faq-6"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">05</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cuanto es el costo del examen de subsanación y en qué
+                  consiste?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  El examen de subsanación tiene un costo de 50.00 soles por
+                  asignatura desaprobada. Este examen tiene una duración de 20
+                  minutos y consta de 10 preguntas. Se te otorgarán dos intentos
+                  para presentar el examen, y se tomará en cuenta la nota más
+                  alta obtenida. Para aprobar, deberás obtener una nota igual o
+                  superior a 14.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="plataformas"
+            data-oficina="Soporte"
+            id="faq-7"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">06</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cómo puedo acceder a mis plataformas si olvidé mis
+                  contraseñas?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Para restablecer tus contraseñas, ingresa a la siguiente
+                  página:
+                </p>
+                <p>
+                  <a
+                    href="https://www.empresa.edu.pe/lp/plataformas_virtuales/"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://www.empresa.edu.pe/lp/plataformas_virtuales/</a
+                  >
+                </p>
+                <p>
+                  En esta página encontrarás varios tutoriales paso a paso que
+                  te guiarán para recuperar el acceso a tu cuenta de manera
+                  rápida y sencilla. ¡No te preocupes, es fácil de seguir!
+                </p>
+                <a
+                  class="link-btn-portal"
+                  href="https://www.empresa.edu.pe/lp/plataformas_virtuales/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <i class="fa-solid fa-key"></i>
+                  <span>Ver Tutoriales de Acceso</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="contacto"
+            data-oficina="Atención"
+            id="faq-8"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">07</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cuál es el horario de atención?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  El horario de atención es de lunes a viernes, en dos turnos:
+                </p>
+                <p style="margin: 8px 0">
+                  De 8:00 a.m. a 1:00 p.m.<br />
+                  De 1:45 p.m. a 5:30 p.m.
+                </p>
+                <p>
+                  ¡Te esperamos dentro de ese horario para ayudarte con lo que
+                  necesites!
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-9"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">08</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cuál es el porcentaje de evaluación?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  El porcentaje de evaluación se distribuye de la siguiente
+                  manera:
+                </p>
+                <ul
+                  style="
+                    list-style: disc;
+                    padding-left: 20px;
+                    margin-bottom: 12px;
+                  "
+                >
+                  <li>
+                    70% corresponde al promedio de las 12 lecciones
+                    (evaluaciones) realizadas durante el curso.
+                  </li>
+                  <li>
+                    30% corresponde a la nota del trabajo final de la
+                    asignatura.
+                  </li>
+                </ul>
+                <p>
+                  Así, la nota final se calcula tomando en cuenta ambos
+                  componentes. ¡Recuerda que cada parte es clave para tu
+                  rendimiento!
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="contacto"
+            data-oficina="Atención"
+            id="faq-10"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">09</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿A qué número tengo que llamar para poder comunicarme con
+                  ustedes?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Para comunicarte con nosotros, puedes llamar a nuestra central
+                  telefónica al número (01) 7059768 opción 01.
+                </p>
+                <p>
+                  Estamos disponibles para ayudarte con cualquier consulta o
+                  trámite que necesites. ¡No dudes en contactarnos!
+                </p>
+                <a class="link-btn-portal" href="tel:+5117059768">
+                  <i class="fa-solid fa-phone"></i>
+                  <span>Llamar al (01) 7059768</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="contacto"
+            data-oficina="Soporte"
+            id="faq-11"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">10</span>
+                </div>
+                <h3 class="faq-question-text">
+                  Si tengo dudas ¿Por qué medio me puedo comunicar?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Puedes comunicarte por medio del correo soporte@empresa.edu.pe
+                  o a través de los diferentes canales de atención mencionados
+                  en la sección:
+                  <a
+                    href="https://www.empresa.edu.pe/soporte/"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://www.empresa.edu.pe/soporte/</a
+                  >
+                </p>
+                <p>
+                  Contamos con agentes de soporte académico, que están atentos a
+                  sus consultas.
+                </p>
+                <a
+                  class="link-btn-portal"
+                  href="https://www.iempresa.edu.pe/soporte/"
+                >
+                  <i class="fa-solid fa-headset"></i>
+                  <span>Ir a Soporte IEmpresa</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-12"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">11</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cuanto es la duración de la carrera?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>La carrera tiene una duración de dos (02) años.</p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="plataformas"
+            data-oficina="Soporte"
+            id="faq-13"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">12</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Dónde desarrollo mis evaluaciones?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Las evaluaciones en la carrera a distancia las desarrolla
+                  ingresando en la plataforma Campus (<a
+                    href="https://campus.empresa.edu.pe/login/index.php"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://campus.empresa.edu.pe/login/index.php</a
+                  >).
+                </p>
+                <a
+                  class="link-btn-portal"
+                  href="https://campus.empresa.edu.pe/login/index.php"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                  <span>Ingresar a Campus</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-14"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">13</span>
+                </div>
+                <h3 class="faq-question-text">¿Cuál es la nota aprobatoria?</h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  La nota mínima aprobatoria para cada asignatura es de 13, la
+                  cual es del promedio final de sus 12 evaluaciones y su Trabajo
+                  final de asignatura. Usted podrá hacer seguimiento de sus
+                  notas ingresando a su plataforma Activa (<a
+                    href="https://activa.education"
+                    rel="noopener noreferrer"
+                    style="color: var(--color-primary)"
+                    target="_blank"
+                    >https://activa.education</a
+                  >).
+                </p>
+                <a
+                  class="link-btn-portal"
+                  href="https://activa.education"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <i class="fa-solid fa-chart-line"></i>
+                  <span>Ver Notas en Activa</span>
+                </a>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="tramites"
+            data-oficina="OSE"
+            id="faq-15"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">14</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Es necesario que el estudiante culmine el programa de
+                  estudios para gestionar sus certificados modulares?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  No, la certificación modular es progresiva de manera tal que a
+                  la conclusión satisfactoria de determinado módulo formativo,
+                  los estudiantes puedan obtener un certificado modular, para
+                  facilitar su incorporación al mercado laboral.
+                </p>
+                <p>
+                  Los certificados modulares es por cada dos ciclos concluidos
+                  es decir por 1er y 2do ciclo puede solicitar 1 documento y por
+                  3ro y 4to otro documento, por 5to y 6to puede solicitar otro
+                  progresivo acorde a su carrera y plan de estudios.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-16"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">15</span>
+                </div>
+                <h3 class="faq-question-text">¿Cuánto dura cada asignatura?</h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  Se desarrollan dos asignaturas de manera paralela en un plazo
+                  de 5 semanas, las primeras 4 semanas es el desarrollo de tus
+                  12 lecciones y en la 5ta semana se entrega el trabajo.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card is-destacado"
+            data-category="tramites"
+            data-oficina="Cobranzas"
+            id="faq-17"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">16</span>
+
+                  <span class="faq-pill-tag pill-destacado"
+                    ><i class="fa-solid fa-star"></i> Destacado</span
+                  >
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Cómo puedo proceder con el pago?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  El pago se realiza 24 horas después de la compra solicitada a
+                  través de BCP (agente, app, o web), indicas que deseas hacer
+                  el pago al Instituto "De la empresa" y proporcionas tu código
+                  de pago, que es tu número de DNI.
+                </p>
+                <p>
+                  ¡Y listo! Así podrás completar tu pago de manera rápida y
+                  sencilla.
+                </p>
+              </div>
+            </div>
+          </article>
+          <article
+            class="faq-card"
+            data-category="academico"
+            data-oficina="Académico"
+            id="faq-18"
+          >
+            <button aria-expanded="false" class="faq-trigger">
+              <div class="faq-title-wrap">
+                <div class="faq-meta-info">
+                  <span class="faq-num">17</span>
+                </div>
+                <h3 class="faq-question-text">
+                  ¿Qué es la semana de rezagados?
+                </h3>
+              </div>
+              <div class="faq-arrow">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </button>
+            <div class="faq-body-collapse">
+              <div class="faq-body-content">
+                <p>
+                  La semana de rezagados es una semana adicional que ofrecemos a
+                  los estudiantes que no lograron completar alguna de sus 12
+                  lecciones en las 4 semanas establecidas. Esta semana extra
+                  funciona como una sexta semana para que puedan ponerse al día
+                  y la calificación está a base de 16.
+                </p>
+              </div>
+            </div>
+          </article>
+        </div>
+        <!-- Mensaje si no hay resultados -->
+        <div class="empty-results-box" id="faqEmptyState">
+          <p
+            style="
+              font-size: 1.1rem;
+              font-weight: 500;
+              color: var(--color-primary);
+              margin-bottom: 6px;
+            "
+          >
+            No se encontraron preguntas
+          </p>
+          <p style="color: var(--color-text-muted); margin-bottom: 16px">
+            No encontramos coincidencias para "<span id="emptyQueryText"></span
+            >".
+          </p>
+          <button
+            class="search-btn-cta"
+            id="resetSearchBtn"
+            style="margin: 0 auto"
+            type="button"
+          >
+            Restablecer búsqueda
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- ==========================================================================
+       6. Sección Pre-Footer (Canales de Contacto Directo y Nota Académica - Idéntico a Imagen 1 y Soporte)
+       ========================================================================== -->
+    <section class="pre-footer-section">
+      <div class="container text-center">
+        <div class="pre-footer-contact">
+          <p>
+            <span
+              >WhatsApp:
+              <a
+                href="https://wa.me/15558964766"
+                target="_blank"
+                rel="noopener noreferrer"
+                >+1 (555) 896-4766</a
+              ></span
+            ><br />
+            <span
+              >Correo:
+              <a href="mailto:soporte@empresa.edu.pe"
+                >soporte@empresa.edu.pe</a
+              ></span
+            ><br />
+            <span
+              >Oficina de Servicio al Estudiante:
+              <a href="tel:+5117059768">+51 1 7059768</a></span
+            >
+          </p>
+        </div>
+        <div class="pre-footer-divider"></div>
+        <div class="pre-footer-note">
+          <p>
+            Nota: La programación académica se realiza dentro de los rangos
+            horarios institucionales y conforme al calendario institucional,<br />
+            pudiendo incluir sesiones los días sábado y domingo.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+       7. Footer Oficial de IEmpresa (100% Idéntico a Imagen 3 y Soporte.html)
+       ========================================================================== -->
+    <footer class="footer-iempresa">
+      <div class="container footer-top-container">
+        <!-- Columna Izquierda: Apps, Sellos y Datos de Contacto -->
+        <div class="footer-left-col footer-animate fadeInLeft">
+          <div class="footer-badges">
+            <a
+              href="https://play.google.com/store/apps/details?id=campus.instituto.empresa"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <img
+                alt="Google Play"
+                class="footer-app-img"
+                src="assets/app_1x.png"
+                width="160"
+              />
+            </a>
+            <img
+              alt="Sello de Calidad Madison"
+              class="footer-seal-img"
+              src="assets/sello_instituci_n_madisonok_1x.png"
+              width="80"
+            />
+          </div>
+          <address class="footer-contact-address">
+            <div class="footer-contact-row">
+              <i class="fa fa-home"></i>
+              <div>
+                Dirección: Piso 4 de la Parcela B-4-A, Valle de Tacna, Sector
+                Copare, distrito, provincia y departamento de Tacna.
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="fa fa-phone"></i>
+              <div>
+                Central Telefónica:
+                <a href="tel:+5117059768">(01) 7059768</a>
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="fab fa-whatsapp"></i>
+              <div>
+                WhatsApp para Postulantes:
+                <a
+                  href="https://wa.me/51974536105"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >+51 974536105</a
+                >
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="fab fa-whatsapp"></i>
+              <div>
+                WhatsApp para Estudiantes:
+                <a
+                  href="https://wa.me/15558964766"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >+1 (555) 896-4766</a
+                >
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="fa fa-envelope"></i>
+              <div>
+                Email para Postulantes:
+                <a href="mailto:admision@iempresa.edu.pe"
+                  >admision@iempresa.edu.pe</a
+                >
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="fa fa-envelope"></i>
+              <div>
+                Email para Estudiantes:
+                <a href="mailto:soporte@iempresa.edu.pe"
+                  >soporte@iempresa.edu.pe</a
+                >
+              </div>
+            </div>
+            <div class="footer-contact-row">
+              <i class="far fa-clock"></i>
+              <div>
+                Horario administrativo: Lunes a Viernes de 08:00 am a 01:00 pm  
+                01:45 pm a 05:45 pm
+              </div>
+            </div>
+            <div class="footer-minedu-block">
+              <span class="footer-institute-name"
+                >Instituto de Educación Superior de la Empresa</span
+              >
+              <span>RM N°178 – 2024 – MINEDU</span>
+            </div>
+          </address>
+        </div>
+        <!-- Columna Derecha: 3 Columnas de Enlaces sin encabezados (Idéntico a Imagen 3) -->
+        <div class="footer-right-links">
+          <!-- Columna 1 -->
+          <div class="footer-link-column footer-animate fadeInRight">
+            <ul>
+              <li>
+                <a href="https://www.iempresa.edu.pe/transparencia/"
+                  >Portal de Transparencia</a
+                >
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/politicas-de-privacidad/"
+                  >Política de Privacidad</a
+                >
+              </li>
+              <li>
+                <a class="active-link" href="#preguntas"
+                  >Preguntas Frecuentes</a
+                >
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/internacional/"
+                  >Grupo Internacional</a
+                >
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/contacto/">Contacto</a>
+              </li>
+            </ul>
+          </div>
+          <!-- Columna 2 -->
+          <div
+            class="footer-link-column footer-animate bounceInRight anim-delay-1"
+          >
+            <ul>
+              <li>
+                <a
+                  href="https://campus.empresa.edu.pe/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >Campus Virtual</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://activa.education/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >Registro Académico</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://www.iempresa.edu.pe/programa-de-becas/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >Programa de becas</a
+                >
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/soporte/">Soporte</a>
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/intermediacion-laboral/"
+                  >Intermediación Laboral</a
+                >
+              </li>
+            </ul>
+          </div>
+          <!-- Columna 3 -->
+          <div
+            class="footer-link-column footer-animate bounceInRight anim-delay-2"
+          >
+            <ul>
+              <li>
+                <a
+                  href="https://www.iberoteca.net/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >Biblioteca Virtual</a
+                >
+              </li>
+              <li>
+                <a href="https://www.iempresa.edu.pe/servicios-complementarios/"
+                  >Servicios Complementarios</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://registros.empresa.edu.pe/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >Verificación de Documentos</a
+                >
+              </li>
+              <li>
+                <a
+                  href="https://gan.education/globaltalks/"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  >GlobalTalks</a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <!-- Redes Sociales: Círculos Blancos con iconos negros (Idéntico a Imagen 3) -->
+      <div class="footer-social-wrapper footer-animate fadeInUp">
+        <ul class="social-circles-list">
+          <li>
+            <a
+              aria-label="Facebook"
+              class="social-circle-link"
+              href="https://www.facebook.com/iesempresa"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <i class="fab fa-facebook-f"></i>
+            </a>
+          </li>
+          <li>
+            <a
+              aria-label="Instagram"
+              class="social-circle-link"
+              href="https://www.instagram.com/iesempresa/"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <i class="fab fa-instagram"></i>
+            </a>
+          </li>
+          <li>
+            <a
+              aria-label="LinkedIn"
+              class="social-circle-link"
+              href="https://www.linkedin.com/company/instituto-de-la-empresa"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <i class="fab fa-linkedin-in"></i>
+            </a>
+          </li>
+          <li>
+            <a
+              aria-label="YouTube"
+              class="social-circle-link"
+              href="https://www.youtube.com/channel/UC7dV1z-xJmB1deVVpzPKH1Q"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <i class="fab fa-youtube"></i>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <!-- Barra Inferior GAN (#1a1a19, Idéntico a Imagen 3) -->
+      <div class="footer-gan-bar">
+        <div class="container gan-flex-container">
+          <div class="gan-brand-logo footer-animate slideInLeft">
+            <a
+              href="https://gan.education/?utm_source=web-iempresa&amp;utm_medium=link-footer&amp;utm_campaign=powered-by-gan"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <img
+                alt="Powered by Global Academic Network"
+                src="assets/powered_gan_2_1x.png"
+                width="180"
+              />
+            </a>
+          </div>
+          <div class="gan-text-desc footer-animate slideInRight">
             <p>
-              Ingresa la contraseña de administrador para configurar qué filtros
-              estarán visibles para los usuarios.
+              El Instituto de la Empresa es miembro de
+              <a
+                href="https://gan.education/?utm_source=web-iempresa&amp;utm_medium=link-footer&amp;utm_campaign=powered-by-gan"
+                rel="noopener noreferrer"
+                target="_blank"
+                >Global Academic Network</a
+              >, una red con presencia en Chile, Estados Unidos, España, Perú,
+              Portugal, Andorra y Paraguay, que cuenta con más de 75 mil
+              estudiantes de 15 nacionalidades distintas.
             </p>
           </div>
-          <div class="admin-form-group">
-            <label for="admin-password-input"
-              >Contraseña de Administrador:</label
-            >
-            <div class="admin-password-wrap">
-              <input
-                type="password"
-                id="admin-password-input"
-                class="admin-input"
-                placeholder="Ingresa la contraseña..."
-                autocomplete="new-password"
-                required
-              />
-              <button
-                type="button"
-                class="admin-eye-btn"
-                onclick="togglePasswordVisibility('admin-password-input', this)"
-                title="Mostrar/Ocultar contraseña"
-              >
-                👁️
-              </button>
-            </div>
-            <div
-              id="admin-auth-error"
-              class="admin-error-box"
-              style="display: none"
-            ></div>
-          </div>
-          <div class="admin-modal-footer">
-            <button type="button" class="btn" onclick="closeAdminAuthModal()">
-              Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary" id="btn-admin-login">
-              <span>Ingresar a Configuración</span>
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
-
-    <!-- ================= MODAL 2: CONFIGURACIÓN DE FILTROS VISIBLES ================= -->
-    <div
-      class="admin-modal-overlay"
-      id="modal-admin-config"
-      onclick="handleModalOverlayClick(event, 'modal-admin-config')"
+    </footer>
+    <!-- Botón Volver Arriba -->
+    <button
+      aria-label="Subir"
+      class="back-to-top"
+      id="scrollTopBtn"
+      title="Subir"
     >
-      <div class="admin-modal-card admin-config-card">
-        <div class="admin-modal-header">
-          <div class="admin-header-title">
-            <span class="admin-icon-badge">⚙️</span>
-            <div>
-              <h3>Panel de Configuración de Filtros</h3>
-              <p>
-                Controla qué filtros se muestran u ocultan a los usuarios en la
-                plataforma
-              </p>
-            </div>
-          </div>
-          <button
-            class="admin-close-btn"
-            onclick="closeAdminConfigModal()"
-            title="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div class="admin-modal-body">
-          <!-- Barra de Acciones Rápidas -->
-          <div class="admin-toolbar">
-            <div class="admin-toolbar-stats">
-              <span class="admin-stat-pill" id="admin-active-count-badge"
-                >15 / 15 Filtros Activos</span
-              >
-              <span class="admin-stat-hint"
-                >Si una categoría no tiene filtros activos, se ocultará
-                automáticamente.</span
-              >
-            </div>
-            <div class="admin-toolbar-btns">
-              <button
-                type="button"
-                class="btn btn-sm"
-                onclick="setAllAdminFilters(true)"
-              >
-                ✓ Marcar Todos
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                onclick="setAllAdminFilters(false)"
-              >
-                ✕ Desmarcar Todos
-              </button>
-            </div>
-          </div>
-
-          <!-- Grid de Categorías -->
-          <div class="admin-categories-container">
-            <!-- CATEGORÍA 1 -->
-            <div class="admin-cat-box" id="admin-catbox-1">
-              <div class="admin-cat-header">
-                <div class="admin-cat-title">
-                  <span class="filter-section-badge">1</span>
-                  <h4>Filtros Principales</h4>
-                </div>
-                <span class="admin-cat-counter" id="admin-cat-counter-1"
-                  >3/3 activos</span
-                >
-              </div>
-              <div class="admin-checkboxes-grid">
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-crea"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Fecha de Creación</span>
-                    <span class="chk-item-desc"
-                      >Rango y botones rápidos (Hoy, Ayer, 7d, 30d, Mes)</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-adv"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Asesor Comercial</span>
-                    <span class="chk-item-desc"
-                      >Selector multiselección de asesores oficiales</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-pipeline"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Pipeline / Admisión</span>
-                    <span class="chk-item-desc"
-                      >Filtro por períodos o embudos de admisión</span
-                    >
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- CATEGORÍA 2 -->
-            <div class="admin-cat-box" id="admin-catbox-2">
-              <div class="admin-cat-header">
-                <div class="admin-cat-title">
-                  <span class="filter-section-badge">2</span>
-                  <h4>Etapas & Fecha de Cambio</h4>
-                </div>
-                <span class="admin-cat-counter" id="admin-cat-counter-2"
-                  >3/3 activos</span
-                >
-              </div>
-              <div class="admin-checkboxes-grid">
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-stage"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Etapas</span>
-                    <span class="chk-item-desc"
-                      >Etapas del pipeline (Progreso, Perdido, Éxito)</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-cambio"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">F. Cambio Etapa</span>
-                    <span class="chk-item-desc"
-                      >Fecha en la que el lead cambió a su etapa actual</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-atajos"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Atajos de Contacto</span>
-                    <span class="chk-item-desc"
-                      >Botones rápidos Contactables / No Contactables</span
-                    >
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- CATEGORÍA 3 -->
-            <div class="admin-cat-box" id="admin-catbox-3">
-              <div class="admin-cat-header">
-                <div class="admin-cat-title">
-                  <span class="filter-section-badge">3</span>
-                  <h4>Segmentación de Leads (Filtros Adicionales)</h4>
-                </div>
-                <span class="admin-cat-counter" id="admin-cat-counter-3"
-                  >6/6 activos</span
-                >
-              </div>
-              <div class="admin-checkboxes-grid">
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-program"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Programa Académico</span>
-                    <span class="chk-item-desc"
-                      >Carreras profesionales y diplomados</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-origin"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Origen / Canal</span>
-                    <span class="chk-item-desc"
-                      >Canales de captación de leads</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-ciudad"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Ciudad</span>
-                    <span class="chk-item-desc"
-                      >Ubicación geográfica del lead</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-nivel"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Nivel de Estudio</span>
-                    <span class="chk-item-desc">Grado académico alcanzado</span>
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-medio"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Medio Contacto</span>
-                    <span class="chk-item-desc"
-                      >Vía de comunicación inicial</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fitem-ia"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">Calificación IA</span>
-                    <span class="chk-item-desc"
-                      >Score cualitativo generado por inteligencia
-                      artificial</span
-                    >
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- CATEGORÍA 4 -->
-            <div class="admin-cat-box" id="admin-catbox-4">
-              <div class="admin-cat-header">
-                <div class="admin-cat-title">
-                  <span class="filter-section-badge">4</span>
-                  <h4>Filtros de Campaña, Atribución y Remarketing</h4>
-                </div>
-                <span class="admin-cat-counter" id="admin-cat-counter-4"
-                  >3/3 activos</span
-                >
-              </div>
-              <div class="admin-checkboxes-grid">
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fgroup-utm"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">🌐 Parámetros UTM Web</span>
-                    <span class="chk-item-desc"
-                      >Grupo completo: Source, Medium, Campaign, Content,
-                      Term</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fgroup-chatfuel"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">🤖 Chatfuel & WhatsApp</span>
-                    <span class="chk-item-desc"
-                      >Grupo completo: Origen CH, Campaign CH, Content CH, Term
-                      CH</span
-                    >
-                  </div>
-                </label>
-                <label class="admin-chk-item">
-                  <input
-                    type="checkbox"
-                    id="chk-cfg-fgroup-rmkt"
-                    onchange="updateAdminCounters()"
-                  />
-                  <div class="chk-item-content">
-                    <span class="chk-item-title">🔄 Remarketing (RMKT)</span>
-                    <span class="chk-item-desc"
-                      >Grupo completo: Origen, Respuesta, Nombre, Detalles,
-                      Interés</span
-                    >
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECCIÓN: CAMBIAR CONTRASEÑA -->
-          <div class="admin-change-pass-box">
-            <details>
-              <summary>
-                <span>🔑 Cambiar Contraseña de Administrador (Opcional)</span>
-                <span class="arrow">▼</span>
-              </summary>
-              <div class="admin-pass-fields">
-                <div class="admin-form-group">
-                  <label for="admin-new-pass">Nueva Contraseña:</label>
-                  <input
-                    type="password"
-                    id="admin-new-pass"
-                    class="admin-input"
-                    placeholder="Mínimo 4 caracteres (opcional)"
-                    autocomplete="new-password"
-                  />
-                </div>
-                <div class="admin-form-group">
-                  <label for="admin-confirm-pass">Confirmar Contraseña:</label>
-                  <input
-                    type="password"
-                    id="admin-confirm-pass"
-                    class="admin-input"
-                    placeholder="Repite la nueva contraseña"
-                    autocomplete="new-password"
-                  />
-                </div>
-              </div>
-            </details>
-          </div>
-        </div>
-
-        <div class="admin-modal-footer">
-          <button type="button" class="btn" onclick="closeAdminConfigModal()">
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            id="btn-save-admin-config"
-            onclick="saveAdminConfig()"
-          >
-            <span>💾 Guardar y Aplicar Cambios</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Portal de Tooltip Flotante Global para la Tabla (superpuesto a todo, sin recortes ni scrollbars) -->
-    <div id="table-floating-tooltip" class="table-floating-tooltip"></div>
-
+      <i class="fa-solid fa-arrow-up"></i>
+    </button>
+    <!-- Script de Lógica Interactiva -->
     <script src="script.js"></script>
   </body>
 </html>
